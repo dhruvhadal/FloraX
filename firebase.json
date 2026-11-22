@@ -1,0 +1,34 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "emulators": {
+    "firestore": {
+      "port": 8080
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    }
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "florax-leafguard",
+          "appId": "1:480833420396:android:301b4982f41f64ac4eac49",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "florax-leafguard",
+          "configurations": {
+            "android": "1:480833420396:android:301b4982f41f64ac4eac49"
+          }
+        }
+      }
+    }
+  }
+}

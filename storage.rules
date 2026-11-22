@@ -1,0 +1,57 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // =========================================================================
+    // HELPER FUNCTIONS & SECURITY INTERLOCKS
+    // =========================================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isValidApp() {
+      return request.app != null;
+    }
+
+    function isTrustedCaller() {
+      return isAuthenticated() && isValidApp();
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isStaff() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'admin' ||
+        request.auth.token.role == 'kvk_scientist'
+      );
+    }
+
+    // =========================================================================
+    // LEAF SCAN PATHOLOGY IMAGERY & GRAD-CAM HEATMAPS
+    // =========================================================================
+    // Enforces:
+    // 1. Strict path matching: /leaf_scans/{userId}/{scanId}.jpg
+    // 2. Ownership: Only the authenticated farmer can upload to their path.
+    // 3. Size constraint: Maximum 5MB per image to prevent storage abuse.
+    // 4. Content-Type: Must strictly match image MIME types ('image/jpeg', 'image/png', 'image/webp').
+    match /leaf_scans/{userId}/{fileName} {
+      allow read: if isTrustedCaller() && (isOwner(userId) || isStaff());
+
+      allow write: if isTrustedCaller() && isOwner(userId)
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)')
+        && fileName.matches('.*\\.(jpg|jpeg|png|webp)$');
+
+      allow delete: if isTrustedCaller() && (isOwner(userId) || request.auth.token.role == 'admin');
+    }
+
+    // Default deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

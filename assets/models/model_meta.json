@@ -1,0 +1,21 @@
+{
+  "version": "v1_disease_69class_mobilenetv2",
+  "framework": "keras",
+  "backbone": "mobilenetv2_1.00_224",
+  "gradcam_target_layer": "out_relu",
+  "input_shape": [
+    1,
+    224,
+    224,
+    3
+  ],
+  "input_range": [
+    0.0,
+    255.0
+  ],
+  "num_raw_classes": 69,
+  "num_canonical_classes": 50,
+  "val_accuracy_raw": 0.776,
+  "ood_min_confidence": 0.20,
+  "ood_max_normalized_entropy": 0.85
+}

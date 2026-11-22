@@ -1,0 +1,232 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // HELPER FUNCTIONS & SECURITY INTERLOCKS
+    // =========================================================================
+
+    // Validates active Firebase Authentication session (Anonymous or Email/Password)
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Baseline security assertion: caller must be authenticated.
+    // Spark-safe: does not block sideloaded developer / hackathon testing if App Check attestation is not yet active.
+    function isTrustedCaller() {
+      return isAuthenticated();
+    }
+
+    // Role-Based Access Control (RBAC) via Firebase Custom Claims & User documents
+    function hasRole(role) {
+      return isAuthenticated() && request.auth.token.role == role;
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isKvkScientist() {
+      return hasRole('kvk_scientist') || (
+        isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'kvk_scientist'
+      );
+    }
+
+    // Feature #14: Institution-Only Gate (KVK, Verified NGO, Agricultural Expert, Authorized Field Org)
+    function isAuthorizedInstitution() {
+      return isAuthenticated() && (
+        request.auth.token.role in ['kvk_scientist', 'verified_ngo', 'agri_expert', 'authorized_field_org'] ||
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['kvk_scientist', 'verified_ngo', 'agri_expert', 'authorized_field_org']
+        )
+      );
+    }
+
+    // Document ownership assertion
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // =========================================================================
+    // 1. ICAR / KVK INTEGRATED PEST MANAGEMENT KNOWLEDGE PROTOCOLS
+    // =========================================================================
+    // Verified agronomic repository. Readable by any authenticated farmer client;
+    // strictly immutable except by authorized ICAR / FloraX administrator.
+    match /icar_ipm_protocols/{docId} {
+      allow read: if isTrustedCaller();
+      allow write: if isTrustedCaller() && isAdmin();
+    }
+
+    // =========================================================================
+    // 2. LEAF SCAN DIAGNOSTIC RECORDS
+    // =========================================================================
+    // Farmers own their diagnostic scan documents. KVK Scientists have exclusive
+    // authority to confirm diagnoses and unlock Tier-3 chemical control advisories.
+    match /scans/{scanId} {
+      // Farmers can read their own scans; KVK scientists, authorized institutions and admins can inspect for audit
+      allow read: if isTrustedCaller() && (
+        isOwner(resource.data.userId) || isAuthorizedInstitution() || isAdmin()
+      );
+
+      // Farmers can create a new scan record bound strictly to their own UID
+      allow create: if isTrustedCaller() && (
+        isOwner(request.resource.data.userId) &&
+        request.resource.data.scanId == scanId &&
+        // Initial creation cannot forge KVK verification status or prematurely unlock chemicals
+        request.resource.data.verificationStatus in ['AI_VERIFIED', 'PENDING_KVK_REVIEW'] &&
+        request.resource.data.chemicalUnlocked == false
+      );
+
+      // Updates:
+      // Case A: Farmer can update basic user metadata (e.g., notes, crop tags), but CANNOT modify
+      //         verificationStatus, chemicalUnlocked, or scientist notes.
+      // Case B: Only Authorized Institutions can verify and upgrade status to 'KVK_CONFIRMED' and unlock chemicals.
+      allow update: if isTrustedCaller() && (
+        // Scenario A: Farmer updating non-critical fields on their own record
+        (
+          isOwner(resource.data.userId) &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'verificationStatus', 'chemicalUnlocked', 'kvkScientistId', 'kvkScientistNote'
+          ])
+        ) ||
+        // Scenario B: Authorized Institution executing clinical confirmation & advisory unlock
+        (
+          isAuthorizedInstitution() &&
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.verificationStatus in ['KVK_CONFIRMED', 'PENDING_KVK_REVIEW'] &&
+          request.resource.data.kvkScientistNote is string
+        ) ||
+        // Scenario C: Admin override
+        isAdmin()
+      );
+
+      // Scans are immutable historical records; deletion restricted to admin
+      allow delete: if isTrustedCaller() && isAdmin();
+    }
+
+    // =========================================================================
+    // 3. EPIDEMIOLOGICAL OUTBREAK CLUSTERS & VERIFIED OUTBREAK REPORTS (FEATURE #14)
+    // =========================================================================
+    // STRICT RULE: Outbreak clusters and verified reports can ONLY be created/updated
+    // by authorized institutions (KVK, Verified NGOs, Agri Experts) or Admin.
+    // Unverified farmer writes are strictly forbidden to prevent panic / false alarms.
+    match /outbreak_clusters/{clusterId} {
+      allow read: if isAuthenticated();
+
+      allow create, update: if (isAuthorizedInstitution() || isAdmin()) && (
+        // Must contain a valid 5-character GeoHash string
+        request.resource.data.geoHash5 is string &&
+        request.resource.data.geoHash5.size() == 5 &&
+        // House-level GPS privacy protection: raw high-precision telemetry fields are strictly forbidden
+        !('rawGpsCoordinates' in request.resource.data) &&
+        !('farmerContact' in request.resource.data) &&
+        !('farmExactAddress' in request.resource.data)
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    match /verified_outbreak_reports/{reportId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthorizedInstitution() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 4. USER PROFILES & RBAC IDENTITIES
+    // =========================================================================
+    match /users/{userId} {
+      allow read: if isTrustedCaller() && (isOwner(userId) || isAuthorizedInstitution() || isAdmin());
+      allow write: if isTrustedCaller() && (isOwner(userId) || isAdmin());
+    }
+
+    // =========================================================================
+    // 5. KVK ESCALATION TICKETS (< 75% CONFIDENCE TRIAGE)
+    // =========================================================================
+    match /kvk_escalations/{escalationId} {
+      allow read: if isTrustedCaller() && (
+        isOwner(resource.data.userId) || isAuthorizedInstitution() || isAdmin()
+      );
+
+      allow create: if isTrustedCaller() && (
+        isOwner(request.resource.data.userId) &&
+        request.resource.data.scanId == escalationId
+      );
+
+      allow update: if isTrustedCaller() && (
+        isAuthorizedInstitution() || isAdmin() || (
+          isOwner(resource.data.userId) &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'priority'])
+        )
+      );
+
+      allow delete: if isTrustedCaller() && isAdmin();
+    }
+
+    // =========================================================================
+    // 6. LEAFGUARD ECOSYSTEM: EXPERTS, NGO PARTNERS & CSR GRANTS (FEATURES #10, #11, #16)
+    // =========================================================================
+    match /verified_experts/{expertId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthorizedInstitution() || isAdmin();
+    }
+
+    match /ngo_partners/{ngoId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthorizedInstitution() || isAdmin();
+    }
+
+    match /csr_funding_partners/{partnerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthorizedInstitution() || isAdmin();
+    }
+
+    // =========================================================================
+    // 7. GROUND ASSISTANCE & SECOND OPINION REQUESTS (FEATURES #10 & #11)
+    // =========================================================================
+    match /ngo_assistance_requests/{reqId} {
+      allow read: if isAuthenticated() && (
+        resource.data.farmerUid == request.auth.uid ||
+        isAuthorizedInstitution() ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() &&
+        request.resource.data.farmerUid == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        (resource.data.farmerUid == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])) ||
+        isAuthorizedInstitution() ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /second_opinion_requests/{reqId} {
+      allow read: if isAuthenticated() && (
+        resource.data.farmerUid == request.auth.uid ||
+        resource.data.assignedExpertId == request.auth.uid ||
+        isAuthorizedInstitution() ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() &&
+        request.resource.data.farmerUid == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        (resource.data.farmerUid == request.auth.uid && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'expertFeedback'])) ||
+        (resource.data.assignedExpertId == request.auth.uid) ||
+        isAuthorizedInstitution() ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // DEFAULT DENY
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

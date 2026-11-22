@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "480833420396",
+    "project_id": "florax-leafguard",
+    "storage_bucket": "florax-leafguard.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:480833420396:android:301b4982f41f64ac4eac49",
+        "android_client_info": {
+          "package_name": "com.florax.crophealth"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC5K7xkGn2gJM7P5Wtv4fpQULUTu8CWZsc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

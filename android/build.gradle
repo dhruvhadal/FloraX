@@ -1,0 +1,33 @@
+try {
+    org.gradle.api.artifacts.dsl.RepositoryHandler.metaClass.jcenter = { -> }
+} catch (Throwable ignored) {}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+def newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
+rootProject.layout.buildDirectory.value(newBuildDir)
+
+subprojects {
+    if (project.projectDir.toPath().getRoot() == rootProject.projectDir.toPath().getRoot()) {
+        def newSubprojectBuildDir = newBuildDir.dir(project.name)
+        project.layout.buildDirectory.value(newSubprojectBuildDir)
+    }
+}
+
+subprojects {
+    project.evaluationDependsOn(':app')
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            jvmTarget = "17"
+        }
+    }
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.layout.buildDirectory
+}

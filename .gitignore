@@ -1,0 +1,110 @@
+# ==============================================================================
+# FloraX / LeafGuard — Enterprise Production .gitignore
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. SECRETS, PRIVATE KEYS & CREDENTIALS (CRITICAL - ZERO LEAKS)
+# ------------------------------------------------------------------------------
+data_pipeline/serviceAccountKey.json
+*serviceAccount*.json
+*firebase-adminsdk*.json
+serviceAccountKey*.json
+*.jks
+*.keystore
+key.properties
+android/key.properties
+.env
+.env.*
+*.pem
+*.p12
+
+# ------------------------------------------------------------------------------
+# 2. PYTHON VIRTUAL ENVIRONMENTS, COMPILED BYTECODE & ML SCRATCHPADS
+# ------------------------------------------------------------------------------
+venv/
+.venv/
+*/venv/
+*/.venv/
+backend_vision/venv/
+backend_vision/.venv/
+__pycache__/
+*/__pycache__/
+*/**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.pth
+*.pt
+*.h5
+*.zip
+*.tar.gz
+data_pipeline/raw_datasets/
+data_pipeline/sample_calibration_dataset/
+
+# ------------------------------------------------------------------------------
+# 3. FLUTTER / DART ENGINE & BUILD ARTIFACTS
+# ------------------------------------------------------------------------------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*/build/
+
+# ------------------------------------------------------------------------------
+# 4. ANDROID TOOLCHAIN & BUILD CACHES (GRADLE WRAPPER PRESERVED)
+# ------------------------------------------------------------------------------
+.gradle/
+*/.gradle/
+android/.gradle/
+android/local.properties
+android/captures/
+**/GeneratedPluginRegistrant.java
+
+# ------------------------------------------------------------------------------
+# 5. NODE.JS & WEB BUILD CACHES
+# ------------------------------------------------------------------------------
+node_modules/
+.next/
+*.tsbuildinfo
+dist/
+out/
+
+# ------------------------------------------------------------------------------
+# 6. IDE, EDITORS & LOGS
+# ------------------------------------------------------------------------------
+.idea/
+.agent/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+*.iml
+*.ipr
+*.iws
+*.log
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+*.tmp
+*.bak
+Thumbs.db
+.DS_Store
+
+# ------------------------------------------------------------------------------
+# 7. DESIGN MOCKUPS & INTERMEDIATE ARTIFACTS
+# ------------------------------------------------------------------------------
+stitch_designs/
+
+# ------------------------------------------------------------------------------
+# 8. EXPLICIT PRODUCTION MODEL WEIGHTS WHITELIST (< 10 MB EACH)
+# ------------------------------------------------------------------------------
+!assets/models/florax_disease_v1_drq.tflite
+!assets/models/labels.txt
+!assets/models/class_alias_map.json
+!assets/models/model_meta.json
+!backend_vision/weights/florax_disease_v1_gradcam.keras
+!backend_vision/weights/labels.txt
+!backend_vision/weights/class_alias_map.json
+!backend_vision/weights/model_meta.json

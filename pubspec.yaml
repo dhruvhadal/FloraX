@@ -1,0 +1,64 @@
+name: florax
+description: "FloraX - Universal Mobile Crop Pathology Diagnostic & ICAR Advisory Application"
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase Core & Cloud Services
+  firebase_core: ^2.30.0
+  firebase_auth: ^4.19.4
+  cloud_firestore: ^4.17.2
+  firebase_app_check: ^0.2.2+4
+  firebase_messaging: ^14.9.1
+
+  # State Management & Architecture
+  flutter_riverpod: ^2.5.1
+
+  # Edge Vision & Hardware Camera
+  camera: ^0.10.5+9
+  tflite_flutter: ^0.12.1
+  image: ^4.1.7
+
+  # Spatial & Geospatial Telemetry
+  geolocator: ^11.0.0
+  dart_geohash: ^2.0.0
+  flutter_map: ^8.3.2
+  latlong2: ^0.9.1
+
+  # Voice Assistant & Multilingual Accessibility (Kisan Vani)
+  speech_to_text: ^6.6.0
+  flutter_tts: ^4.0.2
+
+  # Security, Networking & Offline Storage
+  flutter_secure_storage: any
+  dio: ^5.4.2
+  connectivity_plus: ^6.0.0
+  path_provider: ^2.1.2
+  intl: ^0.19.0
+
+  # UI Visualizations & Agronomic Icons
+  fl_chart: ^0.66.2
+  lucide_icons: ^0.257.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.2
+
+flutter:
+  uses-material-design: true
+
+  # Pre-compiled quantized edge models & classification labels
+  assets:
+    - assets/models/florax_disease_v1_drq.tflite
+    - assets/models/labels.txt
+    - assets/models/class_alias_map.json
+    - assets/models/model_meta.json
+    - assets/data/offline_icar_protocols.json

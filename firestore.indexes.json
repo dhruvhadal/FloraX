@@ -1,0 +1,129 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "scans",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "plantTagId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "scans",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "plantTagId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "kvk_escalations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "outbreak_clusters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "geoHash5",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "caseCount",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "outbreak_clusters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "geoHash5",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "confirmedCases",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "verified_experts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "district",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "verified_outbreak_reports",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "geoHash5",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "verifiedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "second_opinion_requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "assignedExpertId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
