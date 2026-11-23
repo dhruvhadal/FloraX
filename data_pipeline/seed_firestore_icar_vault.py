@@ -83,7 +83,24 @@ def encode_geohash(latitude: float, longitude: float, precision: int = 7) -> str
 # SECTION 2: AUTHENTIC ICAR / KVK IPM KNOWLEDGE PROTOCOLS
 # ==============================================================================
 
-ICAR_IPM_PROTOCOLS: List[Dict[str, Any]] = [
+# Synchronize directly from verified 45-class offline knowledge vault
+_offline_json_candidates = [
+    os.path.join(os.path.dirname(__file__), "..", "assets", "data", "offline_icar_protocols.json"),
+    os.path.join("assets", "data", "offline_icar_protocols.json"),
+    os.path.join("..", "assets", "data", "offline_icar_protocols.json"),
+]
+_loaded_protocols = None
+for _cpath in _offline_json_candidates:
+    if os.path.exists(_cpath):
+        try:
+            with open(_cpath, "r", encoding="utf-8") as _f:
+                _loaded_protocols = json.load(_f)
+            print(f"[FloraX Seeder] Successfully loaded {len(_loaded_protocols)} verified protocols from: {_cpath}")
+            break
+        except Exception as _err:
+            print(f"[FloraX Seeder WARNING] Could not read {_cpath}: {_err}")
+
+ICAR_IPM_PROTOCOLS: List[Dict[str, Any]] = _loaded_protocols if _loaded_protocols else [
     {
         "id": "abiotic_magnesium_deficiency",
         "diseaseName": {

@@ -48,9 +48,8 @@ class AppConfig {
   // 3. ASSET PATHS & DYNAMIC TAXONOMY PARSING
   // ===========================================================================
 
-  static const String modelAssetPath = 'assets/models/florax_disease_v1_drq.tflite';
+  static const String modelAssetPath = 'assets/models/florax_v2_45c_fp16.tflite';
   static const String labelsAssetPath = 'assets/models/labels.txt';
-  static const String classAliasMapAssetPath = 'assets/models/class_alias_map.json';
   static const String modelMetaAssetPath = 'assets/models/model_meta.json';
   static const String offlineIcarProtocolsAssetPath = 'assets/data/offline_icar_protocols.json';
 

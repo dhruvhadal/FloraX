@@ -1,21 +1,35 @@
 {
-  "version": "v1_disease_69class_mobilenetv2",
-  "framework": "keras",
-  "backbone": "mobilenetv2_1.00_224",
-  "gradcam_target_layer": "out_relu",
+  "model_version": "florax_v2_45c_efficientnetv2b0",
+  "model_file": "florax_v2_45c_fp16.tflite",
+  "keras_file": "florax_v2_45c_gradcam.keras",
+  "backbone": "EfficientNetV2-B0 (include_preprocessing=True)",
+  "num_classes": 45,
   "input_shape": [
     1,
     224,
     224,
     3
   ],
+  "input_dtype": "float32",
   "input_range": [
     0.0,
     255.0
   ],
-  "num_raw_classes": 69,
-  "num_canonical_classes": 50,
-  "val_accuracy_raw": 0.776,
+  "output_shape": [
+    1,
+    45
+  ],
+  "gradcam_layer_hook": "global_avg_pool.input",
+  "ood_class": "not_a_leaf_background",
   "ood_min_confidence": 0.45,
-  "ood_max_normalized_entropy": 0.6
+  "ood_max_normalized_entropy": 0.65,
+  "clinical_chemical_lock_threshold": 0.75,
+  "metrics": {
+    "val_top1_accuracy": 0.9085,
+    "test_top1_accuracy": 0.8728,
+    "test_top3_accuracy": 0.9665,
+    "field_subset_accuracy": 0.5867,
+    "ood_rejection_accuracy": 1.0,
+    "keras_tflite_max_diff": 0.00025
+  }
 }

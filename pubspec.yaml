@@ -57,8 +57,7 @@ flutter:
 
   # Pre-compiled quantized edge models & classification labels
   assets:
-    - assets/models/florax_disease_v1_drq.tflite
+    - assets/models/florax_v2_45c_fp16.tflite
     - assets/models/labels.txt
-    - assets/models/class_alias_map.json
     - assets/models/model_meta.json
     - assets/data/offline_icar_protocols.json

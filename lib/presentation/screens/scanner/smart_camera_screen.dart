@@ -610,6 +610,8 @@ class _SmartCameraScreenState extends ConsumerState<SmartCameraScreen>
       cropName = 'Paddy / Rice';
     } else if (labelLower.startsWith('cotton_') || labelLower.contains('cotton')) {
       cropName = 'Cotton';
+    } else if (labelLower.startsWith('banana_') || labelLower.contains('banana')) {
+      cropName = 'Banana';
     } else if (labelLower.startsWith('potato_') || labelLower.contains('potato')) {
       cropName = 'Potato';
     } else if (labelLower.startsWith('corn_') || labelLower.contains('corn')) {

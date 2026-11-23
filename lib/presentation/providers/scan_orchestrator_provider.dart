@@ -332,9 +332,34 @@ class ScanOrchestratorNotifier extends AsyncNotifier<ScanOrchestratorState> {
           !isAbioticStress &&
           (lesionResult.lesionAreaPercent >= 1.0 && lesionResult.lesionAreaPercent <= 12.0);
 
+      // Dynamic crop prefix extraction so "Tomato" is no longer hardcoded
+      String resolvedCropType = cropType;
+      final String labelLower = effectiveTopPrediction.labelId.toLowerCase();
+      if (labelLower.startsWith('tomato_')) {
+        resolvedCropType = 'Tomato';
+      } else if (labelLower.startsWith('paddy_')) {
+        resolvedCropType = 'Paddy / Rice';
+      } else if (labelLower.startsWith('cotton_')) {
+        resolvedCropType = 'Cotton';
+      } else if (labelLower.startsWith('banana_')) {
+        resolvedCropType = 'Banana';
+      } else if (labelLower.startsWith('corn_')) {
+        resolvedCropType = 'Corn / Maize';
+      } else if (labelLower.startsWith('potato_')) {
+        resolvedCropType = 'Potato';
+      } else if (labelLower.startsWith('pepper_')) {
+        resolvedCropType = 'Bell Pepper';
+      } else if (labelLower.startsWith('sugarcane_')) {
+        resolvedCropType = 'Sugarcane';
+      } else if (labelLower.startsWith('wheat_')) {
+        resolvedCropType = 'Wheat';
+      } else if (labelLower.startsWith('abiotic_')) {
+        resolvedCropType = 'Crop Foliage (Abiotic Stress)';
+      }
+
       // Fetch ICAR IPM Protocol for top candidate (instant from SQLite offline cache / bundled JSON)
       final String protocolLookupKey = (isAbioticStress && !isAbioticModelPrediction)
-          ? 'abiotic_magnesium_deficiency'
+          ? 'abiotic_nitrogen_deficiency'
           : effectiveTopPrediction.labelId;
       final IcarIpmProtocol? ipmProtocol =
           await firestoreRepo.fetchVerifiedIpmProtocol(protocolLookupKey);
@@ -482,7 +507,7 @@ class ScanOrchestratorNotifier extends AsyncNotifier<ScanOrchestratorState> {
               'scanId': scanId,
               'assignedExpertId': 'unassigned',
               'status': 'REQUESTED',
-              'cropType': cropType,
+              'cropType': resolvedCropType,
               'aiPredictionLabel': effectiveTopPrediction.labelId,
               'aiConfidence': effectiveTopPrediction.confidence,
               'severityGrade': scanRecord.severityGrade.toFirestoreValue(),
@@ -535,7 +560,7 @@ class ScanOrchestratorNotifier extends AsyncNotifier<ScanOrchestratorState> {
         _safeFetchCloudGradCam(
           client: hybridClient,
           sanitizedBytes: lesionResult.sanitizedImageBytes,
-          cropType: cropType,
+          cropType: resolvedCropType,
         ).then((cloudResponse) {
           if (cloudResponse != null &&
               cloudResponse.statusCode == 200 &&

@@ -31,7 +31,7 @@ void main() {
     // =========================================================================
     // 1. ASSET & PATHOLOGY LABEL INTEGRITY
     // =========================================================================
-    test('1. Asset & Label Integrity: assets/models/ contains real v1 trained model, labels, and alias map', () {
+    test('1. Asset & Label Integrity: assets/models/ contains real v2 45-class model, labels, and metadata', () {
       final labelsFile = File(AppConfig.labelsAssetPath);
       expect(labelsFile.existsSync(), isTrue,
           reason: 'labels.txt must exist at ${AppConfig.labelsAssetPath}');
@@ -39,42 +39,39 @@ void main() {
       final String rawContent = labelsFile.readAsStringSync();
       expect(rawContent.trim().isNotEmpty, isTrue);
 
-      final List<String> lines = rawContent
-          .split('\n')
+      final List<String> lines = const LineSplitter()
+          .convert(rawContent)
           .map((line) => line.trim())
           .where((line) => line.isNotEmpty)
           .toList();
 
-      // Assert 69 raw taxonomy classes from real trained model
-      expect(lines.length, equals(69),
-          reason: 'Expected 69 indexed raw classes for real FloraX v1 model');
+      // Assert 45 canonical taxonomy classes for FloraX v2 EdgeLiteRT model
+      expect(lines.length, equals(45),
+          reason: 'Expected exactly 45 indexed canonical classes for FloraX v2 model');
 
-      // Verify class_alias_map.json existence and mapping
-      final aliasFile = File(AppConfig.classAliasMapAssetPath);
-      expect(aliasFile.existsSync(), isTrue,
-          reason: 'class_alias_map.json must exist at ${AppConfig.classAliasMapAssetPath}');
-
-      final Map<String, dynamic> aliasMap = jsonDecode(aliasFile.readAsStringSync()) as Map<String, dynamic>;
-      expect(aliasMap.length, equals(69),
-          reason: 'class_alias_map.json must map all 69 raw labels');
-
-      final Set<String> canonicalClasses = aliasMap.values.map((v) => v.toString()).toSet();
-      expect(canonicalClasses.length, equals(50),
-          reason: 'class_alias_map.json must reduce to 50 canonical classes');
+      final Set<String> canonicalClasses = lines.toSet();
+      expect(canonicalClasses.length, equals(45),
+          reason: 'All 45 classes in labels.txt must be distinct');
 
       const coreCanonicalClasses = [
+        // Paddy (Rice)
         'paddy_leaf_blast',
         'paddy_neck_blast',
         'paddy_bacterial_blight',
         'paddy_brown_spot',
         'paddy_tungro',
         'paddy_healthy',
+        // Sugarcane
         'sugarcane_red_rot',
         'sugarcane_bacterial_blight',
+        'sugarcane_mosaic',
+        'sugarcane_yellow_rust',
         'sugarcane_healthy',
+        // Wheat
         'wheat_yellow_rust',
         'wheat_brown_rust',
         'wheat_healthy',
+        // Tomato
         'tomato_early_blight',
         'tomato_late_blight',
         'tomato_septoria_leaf_spot',
@@ -85,17 +82,34 @@ void main() {
         'tomato_spider_mites',
         'tomato_target_spot',
         'tomato_healthy',
+        // Potato
         'potato_early_blight',
         'potato_late_blight',
         'potato_healthy',
+        // Corn
         'corn_common_rust',
         'corn_northern_leaf_blight',
         'corn_gray_leaf_spot',
         'corn_healthy',
-        'grape_black_rot',
-        'grape_healthy',
+        // Cotton
+        'cotton_healthy',
+        'cotton_bacterial_blight',
+        'cotton_leaf_curl',
+        'cotton_wilt',
+        // Banana
+        'banana_healthy',
+        // Pepper Bell
         'pepper_bell_bacterial_spot',
         'pepper_bell_healthy',
+        // Abiotic Nutrients
+        'abiotic_nitrogen_deficiency',
+        'abiotic_phosphorus_deficiency',
+        'abiotic_potassium_deficiency',
+        'abiotic_zinc_deficiency',
+        'abiotic_micronutrient_deficiency',
+        'abiotic_multi_nutrient_deficiency',
+        // OOD
+        'not_a_leaf_background',
       ];
 
       for (final expected in coreCanonicalClasses) {
@@ -109,10 +123,14 @@ void main() {
           reason: 'model_meta.json must exist at ${AppConfig.modelMetaAssetPath}');
 
       final Map<String, dynamic> modelMeta = jsonDecode(metaFile.readAsStringSync()) as Map<String, dynamic>;
-      expect(modelMeta['num_raw_classes'], equals(69));
-      expect(modelMeta['num_canonical_classes'], equals(50));
-      expect(modelMeta['ood_min_confidence'], equals(0.20));
-      expect(modelMeta['ood_max_normalized_entropy'], equals(0.85));
+      expect(modelMeta['num_classes'], equals(45));
+      expect(modelMeta['input_shape'], equals([1, 224, 224, 3]));
+      expect(modelMeta['input_dtype'], equals('float32'));
+      expect(modelMeta['input_range'], equals([0.0, 255.0]));
+      expect(modelMeta['ood_min_confidence'], equals(0.45));
+      expect(modelMeta['ood_max_normalized_entropy'], equals(0.65));
+      expect(modelMeta['model_file'], equals('florax_v2_45c_fp16.tflite'));
+      expect(modelMeta['keras_file'], equals('florax_v2_45c_gradcam.keras'));
 
       // Verify TFLite model binary asset existence
       final modelFile = File(AppConfig.modelAssetPath);

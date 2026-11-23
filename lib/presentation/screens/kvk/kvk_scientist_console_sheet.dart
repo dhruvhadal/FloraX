@@ -747,11 +747,20 @@ class _KvkScientistConsoleSheetState extends ConsumerState<KvkScientistConsoleSh
                               ],
                             ),
                             const SizedBox(height: 3),
-                            const Text(
-                              'AI Primary Detection: Tomato — Early Blight',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: FloraXTheme.textSecondary, fontSize: 11.5),
+                            Builder(
+                              builder: (context) {
+                                final topCand = data['topCandidate'] as Map<String, dynamic>?;
+                                final String rawLabel = topCand?['labelId'] as String? ?? (data['aiPredictionLabel'] as String? ?? 'foliar_condition');
+                                final String detectionTitle = (topCand?['plainName'] as String?)?.isNotEmpty == true
+                                    ? topCand!['plainName'] as String
+                                    : _formatDetectionTitle(rawLabel);
+                                return Text(
+                                  'AI Primary Detection: $detectionTitle',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: FloraXTheme.textSecondary, fontSize: 11.5),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -1515,6 +1524,17 @@ class _KvkScientistConsoleSheetState extends ConsumerState<KvkScientistConsoleSh
         ),
       ),
     );
+  }
+
+  String _formatDetectionTitle(String labelId) {
+    if (labelId.isEmpty) return 'Foliar Condition';
+    final parts = labelId.split('_');
+    if (parts.length >= 2) {
+      final crop = parts.first[0].toUpperCase() + parts.first.substring(1);
+      final rest = parts.skip(1).map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' ');
+      return '$crop — $rest';
+    }
+    return parts.map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' ');
   }
 
   Future<void> _resolveSecondOpinion(String reqId) async {

@@ -14,10 +14,10 @@ import 'isolate_lesion_analyzer.dart';
 /// Structured inference result returned by the on-device TFLite Isolate Engine
 @immutable
 class TfliteInferenceResult {
-  /// Top 3 classified disease candidates sorted descending by confidence
+  /// Top classified disease candidates sorted descending by confidence
   final List<DiseasePrediction> topPredictions;
 
-  /// Safety Guardrail: Flagged true if top candidate confidence is < 75%
+  /// Safety Guardrail: Flagged true if top candidate confidence is < 75% or OOD
   final bool requiresKvkReview;
 
   /// Lifecycle verification status ('AI_VERIFIED' or 'PENDING_KVK_REVIEW')
@@ -38,135 +38,157 @@ class TfliteInferenceResult {
   });
 }
 
-/// Principal On-Device TFLite Inference Service
+/// Principal Dynamic Metadata-Driven EdgeLiteRT / TFLite Inference Service
 ///
-/// Executes all tensor operations and quantization decoding off the main UI thread
-/// using TFLite's C-bindings `IsolateInterpreter` and background Dart Isolates.
+/// Dynamically reads `assets/models/model_meta.json` at initialization to detect
+/// `.tflite` model filename, input tensor shape ([1, 224, 224, 3] or [1, 300, 300, 3]),
+/// number of classes (45), and clinical OOD thresholds.
+///
+/// Executes 2-View Test-Time Augmentation (TTA) and maps indices directly to `labels.txt`.
 class TfliteIsolateService {
-  static const String _modelAsset = AppConfig.modelAssetPath;
-  static const String _labelsAsset = AppConfig.labelsAssetPath;
-
   Interpreter? _interpreter;
   IsolateInterpreter? _isolateInterpreter;
   List<String> _labels = [];
-  Map<String, String> _classAliasMap = {};
-  double _oodMinConfidence = AppConfig.oodMinConfidence;
-  double _oodMaxNormalizedEntropy = AppConfig.oodMaxNormalizedEntropy;
+
+  // Metadata-driven parameters (defaults dynamically overwritten by model_meta.json)
+  String _modelVersion = 'florax_v2_45c_efficientnetv2b0';
+  String _modelFilename = 'florax_v2_45c_fp16.tflite';
+  List<int> _inputShape = [1, 224, 224, 3];
+  int _inputWidth = 224;
+  int _inputHeight = 224;
+  int _inputChannels = 3;
+  int _numClasses = 45;
+  double _oodMinConfidence = 0.45;
+  double _oodMaxNormalizedEntropy = 0.65;
+  double _clinicalChemicalLockThreshold = 0.75;
+
   bool _isInitialized = false;
   String? _lastInferenceError;
 
   bool get isReady => _isInitialized && (_interpreter != null || _isolateInterpreter != null);
   String? get lastInferenceError => _lastInferenceError;
+  String get modelVersion => _modelVersion;
+  List<int> get inputShape => List.unmodifiable(_inputShape);
+  int get inputChannels => _inputChannels;
+  int get numClasses => _numClasses;
+  double get clinicalChemicalLockThreshold => _clinicalChemicalLockThreshold;
 
-  /// Initializes the TFLite runtime, loads the quantized model, and configures the interpreter
+  /// Initializes the runtime via dynamic metadata, loading bytes on the main isolate
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
-      debugPrint('[FloraX TFLite] Loading model asset: $_modelAsset');
+      debugPrint('[FloraX TFLite] Initializing Dynamic 45-Class EdgeLiteRT Engine...');
 
-      // 1. Configure Interpreter options (threads, hardware acceleration)
-      final options = InterpreterOptions()..threads = 4;
-
-      // 2. Load model bytes directly using rootBundle.load with exact offset and length
-      // This prevents the famous Android memory-mapped asset offset bug in tflite_flutter
+      // 1. Load model_meta.json dynamically first
       try {
-        final ByteData rawAsset = await rootBundle.load(_modelAsset);
-        final Uint8List modelBytes = rawAsset.buffer.asUint8List(
-          rawAsset.offsetInBytes,
-          rawAsset.lengthInBytes,
-        );
-        _interpreter = Interpreter.fromBuffer(modelBytes, options: options);
+        final metaData = await rootBundle.loadString(AppConfig.modelMetaAssetPath);
+        final dynamic decodedMeta = jsonDecode(metaData);
+        if (decodedMeta is Map) {
+          if (decodedMeta['model_version'] != null) {
+            _modelVersion = decodedMeta['model_version'].toString();
+          }
+          if (decodedMeta['model_file'] != null) {
+            _modelFilename = decodedMeta['model_file'].toString();
+          } else if (decodedMeta['model_version'] != null) {
+            _modelFilename = '${decodedMeta['model_version']}.tflite';
+          }
+
+          if (decodedMeta['input_shape'] is List) {
+            final shapeList = (decodedMeta['input_shape'] as List).map((e) => (e as num).toInt()).toList();
+            if (shapeList.length == 4) {
+              _inputShape = shapeList;
+              _inputHeight = shapeList[1];
+              _inputWidth = shapeList[2];
+              _inputChannels = shapeList[3];
+            }
+          }
+
+          if (decodedMeta['num_classes'] is num) {
+            _numClasses = (decodedMeta['num_classes'] as num).toInt();
+          }
+          if (decodedMeta['ood_min_confidence'] is num) {
+            _oodMinConfidence = (decodedMeta['ood_min_confidence'] as num).toDouble();
+          }
+          if (decodedMeta['ood_max_normalized_entropy'] is num) {
+            _oodMaxNormalizedEntropy = (decodedMeta['ood_max_normalized_entropy'] as num).toDouble();
+          }
+          if (decodedMeta['clinical_chemical_lock_threshold'] is num) {
+            _clinicalChemicalLockThreshold = (decodedMeta['clinical_chemical_lock_threshold'] as num).toDouble();
+          }
+        }
         debugPrint(
-          '[FloraX TFLite] Successfully loaded Interpreter.fromBuffer (${modelBytes.length} bytes, address=${_interpreter?.address})',
+          '[FloraX TFLite] Metadata detected: model=$_modelVersion, file=$_modelFilename, '
+          'shape=$_inputShape, classes=$_numClasses, oodMinConf=$_oodMinConfidence',
         );
-      } catch (bufferErr, bufferStack) {
-        _lastInferenceError = 'fromBuffer failed: $bufferErr';
-        debugPrint('[FloraX TFLite ERROR] fromBuffer failed: $bufferErr\n$bufferStack. Trying fromAsset fallback.');
-        try {
-          _interpreter = await Interpreter.fromAsset(_modelAsset, options: options);
-          debugPrint('[FloraX TFLite] Successfully loaded Interpreter.fromAsset');
-        } catch (assetErr, assetStack) {
-          _lastInferenceError = 'Both fromBuffer and fromAsset failed: $assetErr';
-          debugPrint('[FloraX TFLite ERROR] Both fromBuffer and fromAsset failed: $assetErr\n$assetStack');
-        }
+      } catch (metaErr) {
+        debugPrint('[FloraX TFLite WARNING] Could not parse model_meta.json ($metaErr). Using default v2 configuration.');
       }
 
-      // Assert & inspect tensor contracts
-      if (_interpreter != null) {
-        try {
-          final inTensor = _interpreter!.getInputTensor(0);
-          final outTensor = _interpreter!.getOutputTensor(0);
-          debugPrint(
-            '[FloraX TFLite] Input Tensor: name=${inTensor.name}, shape=${inTensor.shape}, type=${inTensor.type}',
-          );
-          debugPrint(
-            '[FloraX TFLite] Output Tensor: name=${outTensor.name}, shape=${outTensor.shape}, type=${outTensor.type}',
-          );
-        } catch (tErr) {
-          debugPrint('[FloraX TFLite] Warning inspecting tensor details: $tErr');
-        }
-      }
-
-      // 3. Spawn IsolateInterpreter for optional isolate execution
-      if (_interpreter != null) {
-        try {
-          _isolateInterpreter = await IsolateInterpreter.create(
-            address: _interpreter!.address,
-          );
-          debugPrint('[FloraX TFLite] IsolateInterpreter created successfully.');
-        } catch (isoErr) {
-          debugPrint('[FloraX TFLite] Note: IsolateInterpreter create deferred: $isoErr (using direct C++ interpreter)');
-        }
-      }
-
-      // 4. Load label mappings with robust CRLF normalization
+      // 2. Load labels with robust LineSplitter (stripping Windows \r\n endings)
       try {
-        final labelsData = await rootBundle.loadString(_labelsAsset);
+        final labelsData = await rootBundle.loadString(AppConfig.labelsAssetPath);
         _labels = const LineSplitter()
             .convert(labelsData)
             .map((line) => line.trim())
             .where((line) => line.isNotEmpty)
             .toList();
-        debugPrint('[FloraX TFLite] Loaded ${_labels.length} raw labels from $_labelsAsset');
-      } catch (e, st) {
-        _lastInferenceError = 'Labels load failed: $e';
-        debugPrint('[FloraX TFLite ERROR] Warning: labels asset not loaded: $e\n$st');
-      }
-
-      // 5. Load class alias map
-      try {
-        final aliasData = await rootBundle.loadString(AppConfig.classAliasMapAssetPath);
-        final dynamic decoded = jsonDecode(aliasData);
-        if (decoded is Map) {
-          _classAliasMap = decoded.map((k, v) => MapEntry(k.toString().trim(), v.toString().trim()));
+        if (_labels.isNotEmpty) {
+          _numClasses = _labels.length;
         }
-        debugPrint('[FloraX TFLite] Loaded ${_classAliasMap.length} aliases from ${AppConfig.classAliasMapAssetPath}');
-      } catch (e, st) {
-        _lastInferenceError = 'Alias map load failed: $e';
-        debugPrint('[FloraX TFLite ERROR] Warning: class alias map not loaded: $e\n$st');
+        debugPrint('[FloraX TFLite] Loaded ${_labels.length} canonical labels from ${AppConfig.labelsAssetPath}');
+      } catch (labelErr, labelStack) {
+        _lastInferenceError = 'Labels load failed: $labelErr';
+        debugPrint('[FloraX TFLite ERROR] Labels asset not loaded: $labelErr\n$labelStack');
+        rethrow;
       }
 
-      // 6. Load model meta
+      // 3. Configure Interpreter options (4 CPU threads)
+      final options = InterpreterOptions()..threads = 4;
+
+      // 4. Load .tflite bytes on the main isolate via rootBundle.load
+      // Never call Interpreter.fromAsset inside an isolate.
+      final String modelAssetPath = _modelFilename.startsWith('assets/')
+          ? _modelFilename
+          : 'assets/models/$_modelFilename';
+      debugPrint('[FloraX TFLite] Loading model bytes from rootBundle: $modelAssetPath');
+
+      final ByteData rawAsset = await rootBundle.load(modelAssetPath);
+      final Uint8List modelBytes = rawAsset.buffer.asUint8List(
+        rawAsset.offsetInBytes,
+        rawAsset.lengthInBytes,
+      );
+
+      _interpreter = Interpreter.fromBuffer(modelBytes, options: options);
+      debugPrint(
+        '[FloraX TFLite] Successfully instantiated Interpreter.fromBuffer (${modelBytes.length} bytes, address=${_interpreter?.address})',
+      );
+
+      // Verify tensor contract
       try {
-        final metaData = await rootBundle.loadString(AppConfig.modelMetaAssetPath);
-        final dynamic decodedMeta = jsonDecode(metaData);
-        if (decodedMeta is Map) {
-          if (decodedMeta['ood_min_confidence'] != null) {
-            _oodMinConfidence = (decodedMeta['ood_min_confidence'] as num).toDouble();
-          }
-          if (decodedMeta['ood_max_normalized_entropy'] != null) {
-            _oodMaxNormalizedEntropy = (decodedMeta['ood_max_normalized_entropy'] as num).toDouble();
-          }
-        }
-      } catch (e) {
-        debugPrint('[FloraX TFLite] Warning: model meta not loaded: $e');
+        final inTensor = _interpreter!.getInputTensor(0);
+        final outTensor = _interpreter!.getOutputTensor(0);
+        debugPrint(
+          '[FloraX TFLite] Verified Tensor Contract: In=${inTensor.shape} (${inTensor.type}) -> Out=${outTensor.shape} (${outTensor.type})',
+        );
+      } catch (tErr) {
+        debugPrint('[FloraX TFLite] Note verifying tensor shapes: $tErr');
       }
 
-      if (_interpreter != null || _isolateInterpreter != null) {
-        _isInitialized = true;
+      // 5. Optionally spawn IsolateInterpreter from address on main isolate
+      try {
+        _isolateInterpreter = await IsolateInterpreter.create(
+          address: _interpreter!.address,
+        );
+        debugPrint('[FloraX TFLite] IsolateInterpreter created successfully.');
+      } catch (isoErr) {
+        debugPrint('[FloraX TFLite] Note: IsolateInterpreter fallback to direct C++ interpreter: $isoErr');
       }
-      debugPrint('[FloraX TFLite] Engine initialized. Loaded ${_labels.length} raw labels, ${_classAliasMap.length} aliases.');
+
+      _isInitialized = true;
+      debugPrint(
+        '[FloraX TFLite] 45-Class Engine Ready. Model=$_modelVersion, Shape=$_inputShape, Classes=$_numClasses',
+      );
     } catch (e, stackTrace) {
       _lastInferenceError = 'Initialization failed: $e';
       debugPrint('[FloraX TFLite ERROR] Initialization failed: $e\n$stackTrace');
@@ -178,7 +200,11 @@ class TfliteIsolateService {
   Future<TfliteInferenceResult> classifyLeaf(Uint8List imageBytes) =>
       classifyImageBytes(imageBytes);
 
-  /// Classifies raw camera bytes or sanitized JPEG bytes in a background isolate
+  /// Executes on-device inference with 2-View Test-Time Augmentation (TTA)
+  ///
+  /// View 1: Original image preprocessed to `[1, H, W, 3]` float32 in `[0.0, 255.0]`
+  /// View 2: Horizontally flipped image preprocessed identically
+  /// Averages prediction probability distributions and directly maps index `i` to `_labels[i]`.
   Future<TfliteInferenceResult> classifyImageBytes(Uint8List imageBytes) async {
     if (!_isInitialized || (_interpreter == null && _isolateInterpreter == null)) {
       await initialize();
@@ -186,116 +212,85 @@ class TfliteIsolateService {
 
     final stopwatch = Stopwatch()..start();
 
-    // 1. Preprocess 224x224 float32 input tensor inside a background isolate
-    final List<List<List<List<double>>>> inputTensor = await Isolate.run(() {
-      return _preprocessImageTo4DTensor(imageBytes);
+    // 1. Run 2-View TTA preprocessing in background isolate (float32 [0.0, 255.0] RGB)
+    final int width = _inputWidth;
+    final int height = _inputHeight;
+    final ttaPair = await Isolate.run(() {
+      return _preprocessImageTtaPair(imageBytes, width, height);
     });
 
-    // 2. Prepare output tensor buffer: shape [1, num_classes] (69 raw classes)
-    final int numClasses = _labels.isNotEmpty ? _labels.length : 69;
-    final outputBuffer = List.generate(
-      1,
-      (_) => List<double>.filled(numClasses, 0.0),
+    final inputOriginal = ttaPair.item1;
+    final inputFlipped = ttaPair.item2;
+
+    // 2. Prepare output buffers [1, num_classes]
+    final int classesCount = _numClasses > 0 ? _numClasses : (_labels.isNotEmpty ? _labels.length : 45);
+    final outputOriginal = List.generate(1, (_) => List<double>.filled(classesCount, 0.0));
+    final outputFlipped = List.generate(1, (_) => List<double>.filled(classesCount, 0.0));
+
+    // 3. Execute inference for both views
+    try {
+      if (_interpreter != null) {
+        _interpreter!.run(inputOriginal, outputOriginal);
+        _interpreter!.run(inputFlipped, outputFlipped);
+      } else if (_isolateInterpreter != null) {
+        await _isolateInterpreter!.run(inputOriginal, outputOriginal);
+        await _isolateInterpreter!.run(inputFlipped, outputFlipped);
+      } else {
+        throw StateError('Interpreter is null despite initialization');
+      }
+    } catch (infErr, infStack) {
+      _lastInferenceError = 'Interpreter execution failed: $infErr';
+      debugPrint('[FloraX TFLite ERROR] Interpreter execution failed: $infErr\n$infStack');
+      rethrow;
+    }
+
+    // 4. Compute 2-View TTA averaged probabilities
+    final List<double> avgProbs = List.generate(
+      classesCount,
+      (i) => (outputOriginal[0][i] + outputFlipped[0][i]) / 2.0,
     );
 
-    // 3. Execute inference:
-    // First try direct native C++ interpreter execution (4 threads, ~15ms execution time)
-    bool inferenceSuccess = false;
-    if (_interpreter != null) {
-      try {
-        _interpreter!.run(inputTensor, outputBuffer);
-        final double rawSum = outputBuffer[0].fold(0.0, (acc, v) => acc + v);
-        inferenceSuccess = outputBuffer[0].any((p) => p > 0.0) && rawSum > 0.10;
-        if (inferenceSuccess) {
-          debugPrint('[FloraX TFLite] Direct C++ interpreter executed successfully. Raw sum: ${rawSum.toStringAsFixed(4)}');
-        }
-      } catch (directErr, directStack) {
-        _lastInferenceError = 'Direct interpreter run error: $directErr';
-        debugPrint('[FloraX TFLite ERROR] Direct interpreter run error: $directErr\n$directStack');
-      }
+    final double sumProbs = avgProbs.fold(0.0, (acc, p) => acc + p);
+
+    // Assert probability distribution integrity (> 0.90)
+    // Never swallow exceptions into flat zeros
+    if (sumProbs <= 0.90) {
+      final msg = 'Model output distribution invalid: sum(probs) = ${sumProbs.toStringAsFixed(4)} (expected > 0.90)';
+      _lastInferenceError = msg;
+      debugPrint('[FloraX TFLite ERROR] $msg');
+      throw StateError(msg);
     }
 
-    // Secondary fallback: IsolateInterpreter if direct interpreter did not populate output
-    if (!inferenceSuccess && _isolateInterpreter != null) {
-      try {
-        await _isolateInterpreter!.run(inputTensor, outputBuffer);
-        final double rawSum = outputBuffer[0].fold(0.0, (acc, v) => acc + v);
-        inferenceSuccess = outputBuffer[0].any((p) => p > 0.0) && rawSum > 0.10;
-        if (inferenceSuccess) {
-          debugPrint('[FloraX TFLite] IsolateInterpreter executed successfully. Raw sum: ${rawSum.toStringAsFixed(4)}');
-        }
-      } catch (isoErr, isoStack) {
-        _lastInferenceError = 'IsolateInterpreter run error: $isoErr';
-        debugPrint('[FloraX TFLite ERROR] IsolateInterpreter run error: $isoErr\n$isoStack');
+    // 5. Determine Top-1 candidate and log exact required format
+    double maxScore = -1.0;
+    int maxIndex = -1;
+    for (int i = 0; i < avgProbs.length; i++) {
+      if (avgProbs[i] > maxScore) {
+        maxScore = avgProbs[i];
+        maxIndex = i;
       }
     }
+    final String top1Label = (maxIndex >= 0 && maxIndex < _labels.length)
+        ? _labels[maxIndex]
+        : 'class_$maxIndex';
+    final double top1Pct = maxScore * 100.0;
 
-    // 4. Extract raw probabilities
-    final List<double> rawProbabilities = outputBuffer[0];
-    final double rawProbSum = rawProbabilities.fold(0.0, (acc, p) => acc + p);
-
-    // Print top raw probability before alias mapping via debugPrint
-    double maxRawProb = -1.0;
-    int maxRawIndex = -1;
-    for (int i = 0; i < rawProbabilities.length; i++) {
-      if (rawProbabilities[i] > maxRawProb) {
-        maxRawProb = rawProbabilities[i];
-        maxRawIndex = i;
-      }
-    }
-    final String topRawLabel = (maxRawIndex >= 0 && maxRawIndex < _labels.length)
-        ? _labels[maxRawIndex]
-        : 'idx_$maxRawIndex';
     debugPrint(
-      '[FloraX TFLite] Top raw probability: ${(maxRawProb * 100).toStringAsFixed(2)}% (raw class: $topRawLabel, sum: ${rawProbSum.toStringAsFixed(4)})',
+      '[TFLite] Model=$_modelVersion Input=$_inputShape top1=$top1Label (${top1Pct.toStringAsFixed(2)}%) sum=${sumProbs.toStringAsFixed(4)}',
     );
 
-    // Never swallow inference failure silently; return informative error result
-    if (!inferenceSuccess || rawProbSum < 0.10) {
-      final errorMsg = _lastInferenceError ??
-          'AI Model Inference Failure: Model produced flat zero probabilities (raw sum: ${rawProbSum.toStringAsFixed(4)})';
-      _lastInferenceError = errorMsg;
-      debugPrint('[FloraX TFLite ERROR] $errorMsg');
-
-      return TfliteInferenceResult(
-        topPredictions: [
-          DiseasePrediction(
-            labelId: 'model_inference_error',
-            confidence: 0.0,
-            scientificName: 'TFLite Model Error',
-            category: DiseaseCategory.fungal,
-            plainName: 'AI Model Inference Error',
-            distinguishingSymptom: errorMsg,
-          ),
-        ],
-        requiresKvkReview: true,
-        verificationStatus: VerificationStatus.pendingKvkReview,
-        inferenceDurationMs: stopwatch.elapsedMilliseconds,
-        inferenceError: errorMsg,
-      );
-    }
-
-    // Inference succeeded! Clear any prior inference error
+    // Clear prior inference error on success
     _lastInferenceError = null;
 
-    // 5. Sum probabilities across duplicate raw labels sharing the same canonical ID in class_alias_map.json
+    // 6. Direct 1:1 index mapping to labels[i] (no alias map required)
     final Map<String, double> canonicalDistribution = {};
-    for (int i = 0; i < rawProbabilities.length; i++) {
-      final String rawLabel = i < _labels.length ? _labels[i] : 'class_$i';
-      final String canonicalId = _classAliasMap[rawLabel] ?? rawLabel;
-      canonicalDistribution[canonicalId] = (canonicalDistribution[canonicalId] ?? 0.0) + rawProbabilities[i];
+    for (int i = 0; i < avgProbs.length; i++) {
+      final String labelId = (i < _labels.length) ? _labels[i] : 'class_$i';
+      canonicalDistribution[labelId] = avgProbs[i] / sumProbs;
     }
 
-    // Normalize canonical distribution
-    final double sumProbs = canonicalDistribution.values.fold(0.0, (acc, p) => acc + p);
-    if (sumProbs > 0.0) {
-      for (final key in canonicalDistribution.keys) {
-        canonicalDistribution[key] = canonicalDistribution[key]! / sumProbs;
-      }
-    }
-
-    // 6. Compute normalized Shannon entropy H_norm = -sum(p * ln(p)) / ln(K)
-    final int k = canonicalDistribution.length > 1 ? canonicalDistribution.length : 50;
+    // 7. Compute normalized Shannon entropy H_norm = -sum(p * ln(p)) / ln(K)
+    final int k = canonicalDistribution.length > 1 ? canonicalDistribution.length : 45;
     final double lnK = math.log(k);
     double shannonEntropy = 0.0;
     for (final p in canonicalDistribution.values) {
@@ -305,21 +300,20 @@ class TfliteIsolateService {
     }
     final double normalizedEntropy = lnK > 0 ? (shannonEntropy / lnK) : 0.0;
 
-    // 7. Sort canonical classes descending by merged probability
+    // 8. Sort classes descending by probability
     final List<MapEntry<String, double>> sortedCanonical = canonicalDistribution.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     final double top1Confidence = sortedCanonical.isNotEmpty ? sortedCanonical.first.value : 0.0;
 
-    // 8. Out-Of-Distribution (OOD) Guardrail:
-    // Determine if prediction distribution is excessively flat (high entropy) or low confidence.
+    // 9. Out-Of-Distribution (OOD) Guardrail
     final bool isOod = top1Confidence < _oodMinConfidence || normalizedEntropy > _oodMaxNormalizedEntropy;
     if (isOod) {
       debugPrint(
         '[FloraX TFLite] OOD Flagged: '
         'top1Conf=${(top1Confidence * 100).toStringAsFixed(1)}% (<${(_oodMinConfidence * 100).toStringAsFixed(0)}%) '
         'OR normEntropy=${normalizedEntropy.toStringAsFixed(3)} (>${_oodMaxNormalizedEntropy.toStringAsFixed(2)}). '
-        'Preserving model predictions and routing to mandatory KVK scientist review.',
+        'Routing to mandatory KVK scientist review.',
       );
     }
 
@@ -343,10 +337,12 @@ class TfliteIsolateService {
 
     stopwatch.stop();
 
-    // 9. Safety Guardrail: Flag KVK expert review if top candidate confidence is < 75% or OOD
+    // 10. Safety Guardrail: Flag KVK expert review if top candidate confidence is < 75% or OOD
     final double topConfidence = top3.isNotEmpty ? top3.first.confidence : 0.0;
     final bool requiresKvkReview = isOod ||
-        topConfidence < AppConfig.kvkConfidenceThreshold;
+        topConfidence < _clinicalChemicalLockThreshold ||
+        (top3.isNotEmpty && top3.first.labelId == 'not_a_leaf_background');
+
     final VerificationStatus verificationStatus = requiresKvkReview
         ? VerificationStatus.pendingKvkReview
         : VerificationStatus.aiVerified;
@@ -359,10 +355,9 @@ class TfliteIsolateService {
     );
   }
 
-  /// Feature #1 & #2: Multi-Region Disease Detection & Abiotic Nutrient vs. Infection Differentiation
+  /// Multi-Region Disease Detection & Abiotic Nutrient vs. Infection Differentiation
   ///
-  /// Runs IsolateInterpreter on the full leaf AND independently on each cropped ROI patch,
-  /// determining Top-3 predictions, confidence scores, and differential visual explanations.
+  /// Runs classification on the full leaf AND independently on each cropped ROI patch.
   Future<List<LeafRegionDiagnosis>> classifyMultiRegion({
     required Uint8List fullLeafBytes,
     required List<RoiCropPatch> roiPatches,
@@ -445,9 +440,9 @@ class TfliteIsolateService {
     return diagnoses;
   }
 
-  /// Feature #2: Differentiation logic for Abiotic Nutrient Deficiency vs. Infectious Pathogen
+  /// Differentiation logic for Abiotic Nutrient Deficiency vs. Infectious Pathogen
   static bool _isAbioticDeficiency(String labelId, DiseaseCategory category) {
-    if (category == DiseaseCategory.nutrient) return true;
+    if (category == DiseaseCategory.nutrient || category == DiseaseCategory.abiotic) return true;
     final lower = labelId.toLowerCase();
     return lower.startsWith('abiotic_') ||
         lower.contains('deficiency') ||
@@ -455,7 +450,7 @@ class TfliteIsolateService {
         lower.contains('scorch');
   }
 
-  /// Feature #2: Generates trilingual diagnostic explanations distinguishing abiotic vs biotic signs
+  /// Generates trilingual diagnostic explanations distinguishing abiotic vs biotic signs
   static Map<String, String> _generateSymptomExplanation({
     required String labelId,
     required String scientificName,
@@ -490,28 +485,43 @@ class TfliteIsolateService {
     }
   }
 
-  /// Converts image bytes into a normalized 4D tensor `[1, 224, 224, 3]`
-  static List<List<List<List<double>>>> _preprocessImageTo4DTensor(Uint8List bytes) {
+  /// Preprocessing helper generating (original, horizontally-flipped) 4D tensors in [0.0, 255.0] float32
+  static _TtaPair _preprocessImageTtaPair(Uint8List bytes, int width, int height) {
     final img.Image? decoded = img.decodeImage(bytes);
     if (decoded == null) {
-      throw const FormatException('Failed to decode image for TFLite preprocessing.');
+      throw const FormatException('Failed to decode image bytes for TFLite inference.');
     }
 
-    // Resize strictly to MobileNetV3 standard input dimension (224x224)
-    final img.Image resized = img.copyResize(
+    // View 1: Original resized
+    final img.Image resizedOrig = img.copyResize(
       decoded,
-      width: 224,
-      height: 224,
+      width: width,
+      height: height,
       interpolation: img.Interpolation.linear,
     );
+    final tensorOrig = _build4DTensor(resizedOrig, width, height);
 
-    // Build float32 buffer [1, 224, 224, 3] with [0.0 - 255.0] range expected by MobileNetV3 preprocess_input
-    final List<List<List<double>>> imageGrid = List.generate(
-      224,
+    // View 2: Horizontal flip resized
+    final img.Image flipped = img.flipHorizontal(decoded);
+    final img.Image resizedFlipped = img.copyResize(
+      flipped,
+      width: width,
+      height: height,
+      interpolation: img.Interpolation.linear,
+    );
+    final tensorFlipped = _build4DTensor(resizedFlipped, width, height);
+
+    return _TtaPair(tensorOrig, tensorFlipped);
+  }
+
+  /// Builds float32 tensor [1, height, width, 3] with [0.0 - 255.0] range expected by EfficientNetV2
+  static List<List<List<List<double>>>> _build4DTensor(img.Image image, int width, int height) {
+    final List<List<List<double>>> grid = List.generate(
+      height,
       (y) => List.generate(
-        224,
+        width,
         (x) {
-          final p = resized.getPixel(x, y);
+          final p = image.getPixel(x, y);
           return [
             p.r.toDouble(),
             p.g.toDouble(),
@@ -520,14 +530,13 @@ class TfliteIsolateService {
         },
       ),
     );
-
-    return [imageGrid];
+    return [grid];
   }
 
-  /// Resolves scientific taxonomy, plain name, and distinguishing symptom based on canonical label ID
+  /// Resolves scientific taxonomy, plain name, and distinguishing symptom for all 45 canonical classes
   static _PathologyMeta _resolvePathologyMetadata(String labelId) {
     switch (labelId.toLowerCase().trim()) {
-      // Background / Non-Leaf
+      // 1. Background / Non-Leaf
       case 'not_a_leaf_background':
         return const _PathologyMeta(
           scientificName: 'Non-Biological Foliage Object',
@@ -536,228 +545,66 @@ class TfliteIsolateService {
           distinguishingSymptom: 'Frame does not contain recognisable crop foliage.',
         );
 
-      // Abiotic Nutrient Deficiencies
-      case 'abiotic_magnesium_deficiency':
+      // 2. Abiotic Nutrient Deficiencies (6 canonical classes)
+      case 'abiotic_micronutrient_deficiency':
         return const _PathologyMeta(
-          scientificName: 'Physiological Chlorosis (Mg)',
+          scientificName: 'Physiological Micronutrient (Fe/Mn/B) Chlorosis',
           category: DiseaseCategory.nutrient,
-          plainName: 'Magnesium Deficiency',
-          distinguishingSymptom: 'Interveinal yellowing with veins staying green on older lower leaves.',
+          plainName: 'Micronutrient Deficiency',
+          distinguishingSymptom: 'Fine interveinal reticulate chlorosis on youngest terminal leaves without necrotic target rings.',
+        );
+      case 'abiotic_multi_nutrient_deficiency':
+        return const _PathologyMeta(
+          scientificName: 'Complex Multi-Nutrient Chlorosis & Scorch',
+          category: DiseaseCategory.nutrient,
+          plainName: 'Multi-Nutrient Deficiency',
+          distinguishingSymptom: 'Combined generalized foliar chlorosis, marginal tip scorch, and stunted internodal development.',
         );
       case 'abiotic_nitrogen_deficiency':
         return const _PathologyMeta(
           scientificName: 'General Foliar Nitrogen Chlorosis',
           category: DiseaseCategory.nutrient,
           plainName: 'Nitrogen Deficiency',
-          distinguishingSymptom: 'Uniform pale yellowing progressing from bottom older leaves upwards.',
+          distinguishingSymptom: 'Uniform pale yellowing progressing from bottom older leaves upwards without fungal fruiting bodies.',
+        );
+      case 'abiotic_phosphorus_deficiency':
+        return const _PathologyMeta(
+          scientificName: 'Foliar Phosphorus Purpling & Stunting',
+          category: DiseaseCategory.nutrient,
+          plainName: 'Phosphorus Deficiency',
+          distinguishingSymptom: 'Abnormal dark green foliage with distinct purplish-bronze pigmentation along veins and lower leaf blades.',
         );
       case 'abiotic_potassium_deficiency':
         return const _PathologyMeta(
           scientificName: 'Marginal Foliar Potassium Scorch',
           category: DiseaseCategory.nutrient,
           plainName: 'Potassium Deficiency',
-          distinguishingSymptom: 'Marginal leaf scorch, tip burn, and necrosis along leaf outer edges.',
+          distinguishingSymptom: 'Marginal leaf scorch, chlorotic rimming, and necrotic firing along the outer leaf margins.',
+        );
+      case 'abiotic_zinc_deficiency':
+        return const _PathologyMeta(
+          scientificName: 'Little Leaf & Interveinal Mottle (Zn)',
+          category: DiseaseCategory.nutrient,
+          plainName: 'Zinc Deficiency',
+          distinguishingSymptom: 'Broad chlorotic bands between midrib and margins, rosette clustered leaves, and severe stunting.',
         );
 
-      // Paddy / Rice
-      case 'paddy_leaf_blast':
+      // 3. Banana
+      case 'banana_healthy':
         return const _PathologyMeta(
-          scientificName: 'Magnaporthe oryzae',
-          category: DiseaseCategory.fungal,
-          plainName: 'Rice Leaf Blast',
-          distinguishingSymptom: 'Spindle-shaped elliptical lesions with gray centers and dark brown borders.',
-        );
-      case 'paddy_neck_blast':
-        return const _PathologyMeta(
-          scientificName: 'Magnaporthe oryzae (Neck Blast)',
-          category: DiseaseCategory.fungal,
-          plainName: 'Rice Neck Blast',
-          distinguishingSymptom: 'Dark necrotic girdling at panicle base causing blank, chaffy grains.',
-        );
-      case 'paddy_bacterial_blight':
-        return const _PathologyMeta(
-          scientificName: 'Xanthomonas oryzae pv. oryzae',
-          category: DiseaseCategory.bacterial,
-          plainName: 'Rice Bacterial Leaf Blight',
-          distinguishingSymptom: 'Wavy yellowish-white water-soaked stripes running down leaf margins.',
-        );
-      case 'paddy_brown_spot':
-        return const _PathologyMeta(
-          scientificName: 'Bipolaris oryzae',
-          category: DiseaseCategory.fungal,
-          plainName: 'Rice Brown Spot',
-          distinguishingSymptom: 'Small oval to circular dark brown spots resembling sesame seeds.',
-        );
-      case 'paddy_tungro':
-        return const _PathologyMeta(
-          scientificName: 'Rice Tungro Spherical/Bacilliform Virus',
-          category: DiseaseCategory.viral,
-          plainName: 'Rice Tungro Virus',
-          distinguishingSymptom: 'Vibrant orange-yellow leaf discoloration starting from tips with stunted tillering.',
-        );
-      case 'paddy_healthy':
-        return const _PathologyMeta(
-          scientificName: 'Oryza sativa (Healthy)',
+          scientificName: 'Musa acuminata (Healthy)',
           category: DiseaseCategory.healthy,
-          plainName: 'Rice Healthy Foliage',
-          distinguishingSymptom: 'Uniform green erect tillers without necrotic borders or margins.',
+          plainName: 'Healthy Banana Foliage',
+          distinguishingSymptom: 'Broad emerald-green leaves with unblemished lamina and strong midrib without streaks or chlorosis.',
         );
 
-      // Sugarcane
-      case 'sugarcane_red_rot':
-        return const _PathologyMeta(
-          scientificName: 'Colletotrichum falcatum',
-          category: DiseaseCategory.fungal,
-          plainName: 'Sugarcane Red Rot',
-          distinguishingSymptom: 'Red lesions with white cross patches along midrib and stalk rotting.',
-        );
-      case 'sugarcane_bacterial_blight':
-        return const _PathologyMeta(
-          scientificName: 'Acidovorax avenae subsp. avenae',
-          category: DiseaseCategory.bacterial,
-          plainName: 'Sugarcane Bacterial Blight',
-          distinguishingSymptom: 'Reddish-brown narrow stripes on leaf blade that rapidly coalesce.',
-        );
-      case 'sugarcane_healthy':
-        return const _PathologyMeta(
-          scientificName: 'Saccharum officinarum (Healthy)',
-          category: DiseaseCategory.healthy,
-          plainName: 'Sugarcane Healthy Foliage',
-          distinguishingSymptom: 'Long intact green foliage without red midrib streaks or stripes.',
-        );
-
-      // Wheat
-      case 'wheat_yellow_rust':
-        return const _PathologyMeta(
-          scientificName: 'Puccinia striiformis',
-          category: DiseaseCategory.fungal,
-          plainName: 'Wheat Yellow (Stripe) Rust',
-          distinguishingSymptom: 'Bright yellow powdery pustules arranged in parallel linear stripes.',
-        );
-      case 'wheat_brown_rust':
-        return const _PathologyMeta(
-          scientificName: 'Puccinia triticina',
-          category: DiseaseCategory.fungal,
-          plainName: 'Wheat Brown (Leaf) Rust',
-          distinguishingSymptom: 'Round orange-brown pustules scattered randomly on upper leaf surface.',
-        );
-      case 'wheat_healthy':
-        return const _PathologyMeta(
-          scientificName: 'Triticum aestivum (Healthy)',
-          category: DiseaseCategory.healthy,
-          plainName: 'Wheat Healthy Foliage',
-          distinguishingSymptom: 'Uniform emerald green blades with intact veins and no rust pustules.',
-        );
-
-      // Tomato
-      case 'tomato_early_blight':
-        return const _PathologyMeta(
-          scientificName: 'Alternaria solani',
-          category: DiseaseCategory.fungal,
-          plainName: 'Tomato Early Blight',
-          distinguishingSymptom: 'Dark brown rings like a bullseye target on older leaves.',
-        );
-      case 'tomato_late_blight':
-        return const _PathologyMeta(
-          scientificName: 'Phytophthora infestans',
-          category: DiseaseCategory.fungal,
-          plainName: 'Tomato Late Blight',
-          distinguishingSymptom: 'Water-soaked dark lesions with white mold on underside in humid air.',
-        );
-      case 'tomato_septoria_leaf_spot':
-        return const _PathologyMeta(
-          scientificName: 'Septoria lycopersici',
-          category: DiseaseCategory.fungal,
-          plainName: 'Tomato Septoria Leaf Spot',
-          distinguishingSymptom: 'Many tiny circular spots with dark brown margins and pale grey centers.',
-        );
-      case 'tomato_bacterial_spot':
-        return const _PathologyMeta(
-          scientificName: 'Xanthomonas perforans',
-          category: DiseaseCategory.bacterial,
-          plainName: 'Tomato Bacterial Spot',
-          distinguishingSymptom: 'Small water-soaked dark spots with yellow chlorotic halos.',
-        );
-      case 'tomato_leaf_mold':
-        return const _PathologyMeta(
-          scientificName: 'Passalora fulva',
-          category: DiseaseCategory.fungal,
-          plainName: 'Tomato Leaf Mold',
-          distinguishingSymptom: 'Pale yellow spots on upper leaf surface, olive-green velvety mold below.',
-        );
-      case 'tomato_yellow_leaf_curl_virus':
-        return const _PathologyMeta(
-          scientificName: 'Tomato yellow leaf curl virus (TYLCV)',
-          category: DiseaseCategory.viral,
-          plainName: 'Tomato Yellow Leaf Curl Virus',
-          distinguishingSymptom: 'Severe upward leaf curling, cupping, yellow margins, and stunted growth.',
-        );
-      case 'tomato_mosaic_virus':
-        return const _PathologyMeta(
-          scientificName: 'Tomato mosaic virus (ToMV)',
-          category: DiseaseCategory.viral,
-          plainName: 'Tomato Mosaic Virus',
-          distinguishingSymptom: 'Mottled alternating dark and light green mosaic pattern with distorted leaflets.',
-        );
-      case 'tomato_spider_mites':
-        return const _PathologyMeta(
-          scientificName: 'Tetranychus urticae',
-          category: DiseaseCategory.fungal,
-          plainName: 'Tomato Spider Mites',
-          distinguishingSymptom: 'Fine yellow-white stippling on leaf surface with fine webbing underneath.',
-        );
-      case 'tomato_target_spot':
-        return const _PathologyMeta(
-          scientificName: 'Corynespora cassiicola',
-          category: DiseaseCategory.fungal,
-          plainName: 'Tomato Target Spot',
-          distinguishingSymptom: 'Brown lesions with concentric rings and distinct yellow chlorotic halos.',
-        );
-      case 'tomato_healthy':
-        return const _PathologyMeta(
-          scientificName: 'Solanum lycopersicum (Healthy)',
-          category: DiseaseCategory.healthy,
-          plainName: 'Tomato Healthy Foliage',
-          distinguishingSymptom: 'Uniform vibrant green leaf blade with no lesions or spots.',
-        );
-
-      // Potato
-      case 'potato_early_blight':
-        return const _PathologyMeta(
-          scientificName: 'Alternaria solani',
-          category: DiseaseCategory.fungal,
-          plainName: 'Potato Early Blight',
-          distinguishingSymptom: 'Concentric dark target-board rings on lower potato leaves.',
-        );
-      case 'potato_late_blight':
-        return const _PathologyMeta(
-          scientificName: 'Phytophthora infestans',
-          category: DiseaseCategory.fungal,
-          plainName: 'Potato Late Blight',
-          distinguishingSymptom: 'Rapid water-soaked lesions turning dark brown with white fuzz in damp conditions.',
-        );
-      case 'potato_healthy':
-        return const _PathologyMeta(
-          scientificName: 'Solanum tuberosum (Healthy)',
-          category: DiseaseCategory.healthy,
-          plainName: 'Potato Healthy Foliage',
-          distinguishingSymptom: 'Smooth intact green leaf blade without brown or black spots.',
-        );
-
-      // Corn / Maize
+      // 4. Corn / Maize (4 canonical classes)
       case 'corn_common_rust':
         return const _PathologyMeta(
           scientificName: 'Puccinia sorghi',
           category: DiseaseCategory.fungal,
           plainName: 'Corn Common Rust',
-          distinguishingSymptom: 'Golden-brown to cinnamon raised pustules scattered on both leaf surfaces.',
-        );
-      case 'corn_northern_leaf_blight':
-        return const _PathologyMeta(
-          scientificName: 'Exserohilum turcicum',
-          category: DiseaseCategory.fungal,
-          plainName: 'Corn Northern Leaf Blight',
-          distinguishingSymptom: 'Long elliptical cigar-shaped grayish-green to tan lesions.',
+          distinguishingSymptom: 'Golden-brown to cinnamon raised powdery pustules scattered across both leaf surfaces.',
         );
       case 'corn_gray_leaf_spot':
         return const _PathologyMeta(
@@ -771,185 +618,259 @@ class TfliteIsolateService {
           scientificName: 'Zea mays (Healthy)',
           category: DiseaseCategory.healthy,
           plainName: 'Corn Healthy Foliage',
-          distinguishingSymptom: 'Vibrant elongated green leaves with clear longitudinal venation.',
+          distinguishingSymptom: 'Vibrant elongated green leaves with clear longitudinal venation and intact lamina.',
+        );
+      case 'corn_northern_leaf_blight':
+        return const _PathologyMeta(
+          scientificName: 'Exserohilum turcicum',
+          category: DiseaseCategory.fungal,
+          plainName: 'Corn Northern Leaf Blight',
+          distinguishingSymptom: 'Long elliptical cigar-shaped grayish-green to tan lesions.',
         );
 
-      // Grape
-      case 'grape_black_rot':
+      // 5. Cotton (4 canonical classes)
+      case 'cotton_bacterial_blight':
         return const _PathologyMeta(
-          scientificName: 'Guignardia bidwellii',
-          category: DiseaseCategory.fungal,
-          plainName: 'Grape Black Rot',
-          distinguishingSymptom: 'Small reddish-brown circular spots on leaves with tiny black pycnidia.',
+          scientificName: 'Xanthomonas citri pv. malvacearum',
+          category: DiseaseCategory.bacterial,
+          plainName: 'Cotton Bacterial Blight',
+          distinguishingSymptom: 'Angular water-soaked leaf spots bounded by veinlets turning dark brown/black with black-arm stem lesions.',
         );
-      case 'grape_esca_black_measles':
+      case 'cotton_healthy':
         return const _PathologyMeta(
-          scientificName: 'Phaeomoniella chlamydospora',
-          category: DiseaseCategory.fungal,
-          plainName: 'Grape Esca (Black Measles)',
-          distinguishingSymptom: 'Tiger-stripe interveinal necrosis with dried berry shriveling.',
-        );
-      case 'grape_leaf_blight_isariopsis_leaf_spot':
-        return const _PathologyMeta(
-          scientificName: 'Pseudocercospora cladosporioides',
-          category: DiseaseCategory.fungal,
-          plainName: 'Grape Leaf Blight',
-          distinguishingSymptom: 'Irregular brown necrotic lesions on leaves leading to defoliation.',
-        );
-      case 'grape_healthy':
-        return const _PathologyMeta(
-          scientificName: 'Vitis vinifera (Healthy)',
+          scientificName: 'Gossypium hirsutum (Healthy)',
           category: DiseaseCategory.healthy,
-          plainName: 'Grape Healthy Foliage',
-          distinguishingSymptom: 'Broad palmately lobed green leaves without necrotic margins or spots.',
+          plainName: 'Cotton Healthy Foliage',
+          distinguishingSymptom: 'Uniform deep-green palmately lobed leaves free from angular lesions, curl, or vascular wilting.',
+        );
+      case 'cotton_leaf_curl':
+        return const _PathologyMeta(
+          scientificName: 'Begomovirus (Cotton Leaf Curl Virus)',
+          category: DiseaseCategory.viral,
+          plainName: 'Cotton Leaf Curl Virus',
+          distinguishingSymptom: 'Upward or downward leaf curling, vein thickening, and enations on leaf underside.',
+        );
+      case 'cotton_wilt':
+        return const _PathologyMeta(
+          scientificName: 'Fusarium oxysporum f. sp. vasinfectum / Verticillium dahliae',
+          category: DiseaseCategory.fungal,
+          plainName: 'Cotton Vascular Wilt',
+          distinguishingSymptom: 'Marginal and interveinal yellowing with diagnostic dark brown vascular discoloration inside the stem.',
         );
 
-      // Bell Pepper
+      // 6. Paddy / Rice (6 canonical classes)
+      case 'paddy_bacterial_blight':
+        return const _PathologyMeta(
+          scientificName: 'Xanthomonas oryzae pv. oryzae',
+          category: DiseaseCategory.bacterial,
+          plainName: 'Rice Bacterial Leaf Blight',
+          distinguishingSymptom: 'Wavy yellowish-white water-soaked stripes running down leaf margins that turn grey-white.',
+        );
+      case 'paddy_brown_spot':
+        return const _PathologyMeta(
+          scientificName: 'Bipolaris oryzae',
+          category: DiseaseCategory.fungal,
+          plainName: 'Rice Brown Spot',
+          distinguishingSymptom: 'Small oval to circular dark brown lesions resembling sesame seeds with yellow chlorotic halos.',
+        );
+      case 'paddy_healthy':
+        return const _PathologyMeta(
+          scientificName: 'Oryza sativa (Healthy)',
+          category: DiseaseCategory.healthy,
+          plainName: 'Rice Healthy Foliage',
+          distinguishingSymptom: 'Uniform green erect tillers without necrotic borders or margins.',
+        );
+      case 'paddy_leaf_blast':
+        return const _PathologyMeta(
+          scientificName: 'Magnaporthe oryzae',
+          category: DiseaseCategory.fungal,
+          plainName: 'Rice Leaf Blast',
+          distinguishingSymptom: 'Spindle-shaped elliptical lesions with grey centers and dark brown or reddish borders.',
+        );
+      case 'paddy_neck_blast':
+        return const _PathologyMeta(
+          scientificName: 'Magnaporthe oryzae (Neck Blast)',
+          category: DiseaseCategory.fungal,
+          plainName: 'Rice Neck Blast',
+          distinguishingSymptom: 'Dark necrotic girdling at panicle base causing blank, chaffy grains and lodging.',
+        );
+      case 'paddy_tungro':
+        return const _PathologyMeta(
+          scientificName: 'Rice Tungro Spherical/Bacilliform Virus',
+          category: DiseaseCategory.viral,
+          plainName: 'Rice Tungro Virus',
+          distinguishingSymptom: 'Vibrant orange-yellow leaf discoloration starting from tips with severe stunting and reduced tillers.',
+        );
+
+      // 7. Bell Pepper (2 canonical classes)
       case 'pepper_bell_bacterial_spot':
         return const _PathologyMeta(
           scientificName: 'Xanthomonas campestris pv. vesicatoria',
           category: DiseaseCategory.bacterial,
-          plainName: 'Pepper Bacterial Spot',
-          distinguishingSymptom: 'Small water-soaked circular to irregular dark spots on leaves.',
+          plainName: 'Bell Pepper Bacterial Spot',
+          distinguishingSymptom: 'Small water-soaked circular to irregular dark spots on leaves with yellow haloes.',
         );
       case 'pepper_bell_healthy':
         return const _PathologyMeta(
           scientificName: 'Capsicum annuum (Healthy)',
           category: DiseaseCategory.healthy,
-          plainName: 'Pepper Healthy Foliage',
-          distinguishingSymptom: 'Glossy smooth green leaves with unbroken margins.',
+          plainName: 'Bell Pepper Healthy Foliage',
+          distinguishingSymptom: 'Glossy smooth green leaves with unbroken margins and uniform foliar health.',
         );
 
-      // Cotton
-      case 'cotton_leaf_curl':
+      // 8. Potato (3 canonical classes)
+      case 'potato_early_blight':
         return const _PathologyMeta(
-          scientificName: 'Begomovirus (CLCuV)',
+          scientificName: 'Alternaria solani',
+          category: DiseaseCategory.fungal,
+          plainName: 'Potato Early Blight',
+          distinguishingSymptom: 'Concentric dark target-board rings on lower potato leaves surrounded by chlorotic tissue.',
+        );
+      case 'potato_healthy':
+        return const _PathologyMeta(
+          scientificName: 'Solanum tuberosum (Healthy)',
+          category: DiseaseCategory.healthy,
+          plainName: 'Potato Healthy Foliage',
+          distinguishingSymptom: 'Smooth intact green compound leaf blade without brown or black necrotic lesions.',
+        );
+      case 'potato_late_blight':
+        return const _PathologyMeta(
+          scientificName: 'Phytophthora infestans',
+          category: DiseaseCategory.fungal,
+          plainName: 'Potato Late Blight',
+          distinguishingSymptom: 'Rapidly expanding water-soaked lesions turning dark brown with white fungal growth on underside in humid air.',
+        );
+
+      // 9. Sugarcane (5 canonical classes)
+      case 'sugarcane_bacterial_blight':
+        return const _PathologyMeta(
+          scientificName: 'Acidovorax avenae subsp. avenae',
+          category: DiseaseCategory.bacterial,
+          plainName: 'Sugarcane Bacterial Blight',
+          distinguishingSymptom: 'Reddish-brown narrow stripes on leaf blade that rapidly coalesce into long necrotic streaks.',
+        );
+      case 'sugarcane_healthy':
+        return const _PathologyMeta(
+          scientificName: 'Saccharum officinarum (Healthy)',
+          category: DiseaseCategory.healthy,
+          plainName: 'Sugarcane Healthy Foliage',
+          distinguishingSymptom: 'Long intact green foliage without red midrib streaks, rust pustules, or mosaic mottling.',
+        );
+      case 'sugarcane_mosaic':
+        return const _PathologyMeta(
+          scientificName: 'Sugarcane mosaic virus (SCMV)',
           category: DiseaseCategory.viral,
-          plainName: 'Cotton Leaf Curl Virus',
-          distinguishingSymptom: 'Upward or downward leaf curling, vein thickening, and enations on leaf underside.',
+          plainName: 'Sugarcane Mosaic Virus',
+          distinguishingSymptom: 'Contrasting islands of dark green against pale yellow-green elongated chlorotic stripes along veins.',
+        );
+      case 'sugarcane_red_rot':
+        return const _PathologyMeta(
+          scientificName: 'Colletotrichum falcatum',
+          category: DiseaseCategory.fungal,
+          plainName: 'Sugarcane Red Rot',
+          distinguishingSymptom: 'Red lesions with white cross patches along leaf midrib and internal cane stalk rotting.',
+        );
+      case 'sugarcane_yellow_rust':
+        return const _PathologyMeta(
+          scientificName: 'Puccinia kuehnii',
+          category: DiseaseCategory.fungal,
+          plainName: 'Sugarcane Yellow Rust',
+          distinguishingSymptom: 'Small elongated yellow to orange-brown powdery pustules oriented parallel to leaf venation.',
         );
 
-      // Apple
-      case 'apple_scab':
+      // 10. Tomato (10 canonical classes)
+      case 'tomato_bacterial_spot':
         return const _PathologyMeta(
-          scientificName: 'Venturia inaequalis',
-          category: DiseaseCategory.fungal,
-          plainName: 'Apple Scab',
-          distinguishingSymptom: 'Velvety olive-green to black spots with feathery margins on leaf surface.',
-        );
-      case 'apple_black_rot':
-        return const _PathologyMeta(
-          scientificName: 'Botryosphaeria obtusa',
-          category: DiseaseCategory.fungal,
-          plainName: 'Apple Black Rot',
-          distinguishingSymptom: 'Frogeye leaf spots with purple margins and brown centers.',
-        );
-      case 'apple_cedar_rust':
-        return const _PathologyMeta(
-          scientificName: 'Gymnosporangium juniperi-virginianae',
-          category: DiseaseCategory.fungal,
-          plainName: 'Apple Cedar Rust',
-          distinguishingSymptom: 'Bright yellow-orange spots on upper leaf with tube-like aecia beneath.',
-        );
-      case 'apple_healthy':
-        return const _PathologyMeta(
-          scientificName: 'Malus domestica (Healthy)',
-          category: DiseaseCategory.healthy,
-          plainName: 'Apple Healthy Foliage',
-          distinguishingSymptom: 'Clean green serrated leaves with no rust or scab lesions.',
-        );
-
-      // Blueberry
-      case 'blueberry_healthy':
-        return const _PathologyMeta(
-          scientificName: 'Vaccinium corymbosum (Healthy)',
-          category: DiseaseCategory.healthy,
-          plainName: 'Blueberry Healthy Foliage',
-          distinguishingSymptom: 'Glossy intact foliage with no spotting or chlorosis.',
-        );
-
-      // Cherry
-      case 'cherry_including_sour_powdery_mildew':
-        return const _PathologyMeta(
-          scientificName: 'Podosphaera clandestina',
-          category: DiseaseCategory.fungal,
-          plainName: 'Cherry Powdery Mildew',
-          distinguishingSymptom: 'White talcum-like powdery fungal patches on new leaf growth.',
-        );
-      case 'cherry_including_sour_healthy':
-        return const _PathologyMeta(
-          scientificName: 'Prunus cerasus (Healthy)',
-          category: DiseaseCategory.healthy,
-          plainName: 'Cherry Healthy Foliage',
-          distinguishingSymptom: 'Smooth dark green leaves with uniform surface texture.',
-        );
-
-      // Orange
-      case 'orange_haunglongbing_citrus_greening':
-        return const _PathologyMeta(
-          scientificName: 'Candidatus Liberibacter asiaticus',
+          scientificName: 'Xanthomonas perforans',
           category: DiseaseCategory.bacterial,
-          plainName: 'Citrus Greening (HLB)',
-          distinguishingSymptom: 'Asymmetrical blotchy mottle chlorosis crossing leaf veins unevenly.',
+          plainName: 'Tomato Bacterial Spot',
+          distinguishingSymptom: 'Small water-soaked dark spots with distinct yellow chlorotic halos.',
         );
-
-      // Peach
-      case 'peach_bacterial_spot':
+      case 'tomato_early_blight':
         return const _PathologyMeta(
-          scientificName: 'Xanthomonas arboricola pv. pruni',
-          category: DiseaseCategory.bacterial,
-          plainName: 'Peach Bacterial Spot',
-          distinguishingSymptom: 'Angular water-soaked spots on leaves that drop out, giving a shot-hole appearance.',
-        );
-      case 'peach_healthy':
-        return const _PathologyMeta(
-          scientificName: 'Prunus persica (Healthy)',
-          category: DiseaseCategory.healthy,
-          plainName: 'Peach Healthy Foliage',
-          distinguishingSymptom: 'Slender green lanceolate leaves with smooth unblemished margins.',
-        );
-
-      // Raspberry
-      case 'raspberry_healthy':
-        return const _PathologyMeta(
-          scientificName: 'Rubus idaeus (Healthy)',
-          category: DiseaseCategory.healthy,
-          plainName: 'Raspberry Healthy Foliage',
-          distinguishingSymptom: 'Compound green serrated leaflets without necrotic edges.',
-        );
-
-      // Soybean
-      case 'soybean_healthy':
-        return const _PathologyMeta(
-          scientificName: 'Glycine max (Healthy)',
-          category: DiseaseCategory.healthy,
-          plainName: 'Soybean Healthy Foliage',
-          distinguishingSymptom: 'Trifoliate clean green leaves with no bacterial pustules or rust.',
-        );
-
-      // Squash
-      case 'squash_powdery_mildew':
-        return const _PathologyMeta(
-          scientificName: 'Podosphaera xanthii',
+          scientificName: 'Alternaria solani',
           category: DiseaseCategory.fungal,
-          plainName: 'Squash Powdery Mildew',
-          distinguishingSymptom: 'White talcum-like powdery growth spreading across broad leaf surface.',
+          plainName: 'Tomato Early Blight',
+          distinguishingSymptom: 'Dark brown rings like a bullseye target on older leaves with chlorotic borders.',
+        );
+      case 'tomato_healthy':
+        return const _PathologyMeta(
+          scientificName: 'Solanum lycopersicum (Healthy)',
+          category: DiseaseCategory.healthy,
+          plainName: 'Tomato Healthy Foliage',
+          distinguishingSymptom: 'Uniform vibrant green leaf blade with intact margins and zero lesions.',
+        );
+      case 'tomato_late_blight':
+        return const _PathologyMeta(
+          scientificName: 'Phytophthora infestans',
+          category: DiseaseCategory.fungal,
+          plainName: 'Tomato Late Blight',
+          distinguishingSymptom: 'Water-soaked dark lesions with white mold on underside in humid conditions.',
+        );
+      case 'tomato_leaf_mold':
+        return const _PathologyMeta(
+          scientificName: 'Passalora fulva',
+          category: DiseaseCategory.fungal,
+          plainName: 'Tomato Leaf Mold',
+          distinguishingSymptom: 'Pale yellow chlorotic spots on upper leaf surface, olive-green velvety mold underneath.',
+        );
+      case 'tomato_mosaic_virus':
+        return const _PathologyMeta(
+          scientificName: 'Tomato mosaic virus (ToMV)',
+          category: DiseaseCategory.viral,
+          plainName: 'Tomato Mosaic Virus',
+          distinguishingSymptom: 'Mottled alternating dark and light green mosaic pattern with distorted foliar leaflets.',
+        );
+      case 'tomato_septoria_leaf_spot':
+        return const _PathologyMeta(
+          scientificName: 'Septoria lycopersici',
+          category: DiseaseCategory.fungal,
+          plainName: 'Tomato Septoria Leaf Spot',
+          distinguishingSymptom: 'Many tiny circular spots with dark brown margins and pale grey centers.',
+        );
+      case 'tomato_spider_mites':
+        return const _PathologyMeta(
+          scientificName: 'Tetranychus urticae',
+          category: DiseaseCategory.pest,
+          plainName: 'Tomato Spider Mites',
+          distinguishingSymptom: 'Fine yellow-white stippling on upper leaf surface with fine delicate webbing underneath.',
+        );
+      case 'tomato_target_spot':
+        return const _PathologyMeta(
+          scientificName: 'Corynespora cassiicola',
+          category: DiseaseCategory.fungal,
+          plainName: 'Tomato Target Spot',
+          distinguishingSymptom: 'Brown lesions with concentric rings and distinct yellow chlorotic halos.',
+        );
+      case 'tomato_yellow_leaf_curl_virus':
+        return const _PathologyMeta(
+          scientificName: 'Tomato yellow leaf curl virus (TYLCV)',
+          category: DiseaseCategory.viral,
+          plainName: 'Tomato Yellow Leaf Curl Virus',
+          distinguishingSymptom: 'Severe upward leaf curling, cupping, yellow margins, and stunted bushy growth.',
         );
 
-      // Strawberry
-      case 'strawberry_leaf_scorch':
+      // 11. Wheat (3 canonical classes)
+      case 'wheat_brown_rust':
         return const _PathologyMeta(
-          scientificName: 'Diplocarpon earlianum',
+          scientificName: 'Puccinia triticina',
           category: DiseaseCategory.fungal,
-          plainName: 'Strawberry Leaf Scorch',
-          distinguishingSymptom: 'Dark purple to brown blotches without the white centers of leaf spot.',
+          plainName: 'Wheat Brown (Leaf) Rust',
+          distinguishingSymptom: 'Round orange-brown pustules scattered randomly across the upper leaf surface.',
         );
-      case 'strawberry_healthy':
+      case 'wheat_healthy':
         return const _PathologyMeta(
-          scientificName: 'Fragaria ananassa (Healthy)',
+          scientificName: 'Triticum aestivum (Healthy)',
           category: DiseaseCategory.healthy,
-          plainName: 'Strawberry Healthy Foliage',
-          distinguishingSymptom: 'Trifoliate healthy green leaves with crisp serrated edges.',
+          plainName: 'Wheat Healthy Foliage',
+          distinguishingSymptom: 'Uniform emerald green blades with intact veins and no rust pustules.',
+        );
+      case 'wheat_yellow_rust':
+        return const _PathologyMeta(
+          scientificName: 'Puccinia striiformis',
+          category: DiseaseCategory.fungal,
+          plainName: 'Wheat Yellow (Stripe) Rust',
+          distinguishingSymptom: 'Bright yellow powdery pustules arranged in parallel linear stripes along leaf veins.',
         );
 
       default:
@@ -993,6 +914,12 @@ class TfliteIsolateService {
     _interpreter = null;
     _isInitialized = false;
   }
+}
+
+class _TtaPair {
+  final List<List<List<List<double>>>> item1;
+  final List<List<List<List<double>>>> item2;
+  const _TtaPair(this.item1, this.item2);
 }
 
 class _PathologyMeta {
