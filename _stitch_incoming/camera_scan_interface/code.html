@@ -1,0 +1,306 @@
+<!DOCTYPE html><html lang="en"><head></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col"><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_stack" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "primary": "#214623",
+          "surface-container": "#e7f1e3",
+          "inverse-surface": "#2a3329",
+          "surface": "#f2fcee",
+          "surface-tint": "#416740",
+          "on-error": "#ffffff",
+          "surface-container-highest": "#dbe5d8",
+          "error": "#ba1a1a",
+          "on-tertiary-container": "#b5d1b7",
+          "on-primary-fixed": "#002105",
+          "on-tertiary-fixed": "#08200f",
+          "on-tertiary-fixed-variant": "#344c38",
+          "surface-dim": "#d3ddcf",
+          "tertiary-fixed": "#cdeacf",
+          "outline": "#72796f",
+          "on-tertiary": "#ffffff",
+          "on-surface": "#151e15",
+          "tertiary-container": "#425b46",
+          "tertiary-fixed-dim": "#b2ceb4",
+          "on-secondary-container": "#394c30",
+          "surface-container-low": "#edf7e8",
+          "error-container": "#ffdad6",
+          "inverse-on-surface": "#eaf4e6",
+          "secondary-container": "#d2eac3",
+          "on-secondary-fixed": "#0e2008",
+          "on-secondary": "#ffffff",
+          "on-secondary-fixed-variant": "#394c30",
+          "on-error-container": "#93000a",
+          "primary-fixed": "#c2eebd",
+          "outline-variant": "#c2c8bd",
+          "primary-container": "#385e38",
+          "primary-fixed-dim": "#a7d2a2",
+          "on-primary-container": "#abd6a6",
+          "surface-container-lowest": "#ffffff",
+          "inverse-primary": "#a7d2a2",
+          "on-primary": "#ffffff",
+          "on-surface-variant": "#424940",
+          "tertiary": "#2b4330",
+          "secondary-fixed": "#d2eac3",
+          "surface-bright": "#f2fcee",
+          "secondary-fixed-dim": "#b7cda8",
+          "secondary": "#506446",
+          "background": "#f2fcee",
+          "on-primary-fixed-variant": "#294f2b",
+          "surface-variant": "#dbe5d8",
+          "surface-container-high": "#e1ebdd",
+          "on-background": "#151e15"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "space-sm": "0.5rem",
+          "gutter": "1rem",
+          "space-xs": "0.25rem",
+          "space-lg": "1.25rem",
+          "space-md": "0.75rem",
+          "space-xl": "1.75rem",
+          "margin": "1rem"
+        },
+        "fontFamily": {
+          "headline-lg": ["Plus Jakarta Sans"],
+          "label-md": ["Plus Jakarta Sans"],
+          "body-sm": ["Plus Jakarta Sans"],
+          "body-md": ["Plus Jakarta Sans"],
+          "label-lg": ["Plus Jakarta Sans"],
+          "headline-lg-mobile": ["Plus Jakarta Sans"],
+          "headline-md": ["Plus Jakarta Sans"],
+          "label-sm": ["Plus Jakarta Sans"],
+          "headline-sm": ["Plus Jakarta Sans"],
+          "body-lg": ["Plus Jakarta Sans"]
+        },
+        "fontSize": {
+          "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+          "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "600" }],
+          "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+          "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+          "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+          "headline-lg-mobile": ["26px", { "lineHeight": "34px", "fontWeight": "700" }],
+          "headline-md": ["22px", { "lineHeight": "30px", "fontWeight": "600" }],
+          "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "600" }],
+          "headline-sm": ["18px", { "lineHeight": "26px", "fontWeight": "600" }],
+          "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "500" }]
+        }
+      }
+    }
+  }
+</script><style>@layer base{html,body{width:100%;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<header class="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl border-b border-surface-container-highest/60"><div class="h-16 px-gutter max-w-lg mx-auto flex items-center justify-between gap-space-xs"><div class="flex items-center gap-space-xs"><button aria-label="Go Back" class="w-11 h-11 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-low" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><div class="flex items-center gap-space-xs"><img alt="KisanSetu Logo" class="h-7 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVdv8zp6oQQ9u9Mo5uM287i-KW67wQ9oZ6sT_Xz-xOXBwNsQOQhr7U4PuJU5LlawUjNVVRp5-7fsd4yDcsAe9n5d7uG1Lvm5QX1vD05vUKGWCKSX7dP1-Zty7oGB5lb2ivZQQeQeoBHSJpnzcNQ3_hHwIKb39Ntf6ADypjRVpNGWvZQqoLRnD7_IiefWhxeVDQCCSnv-xcNuik99WKGLjdFPtTbdnBFURKdgHJ-Ei3RfexOgo_Jwlt"><h1 class="font-headline-sm text-headline-sm text-primary font-bold truncate">KisanSetu Scan AI</h1></div></div><div class="flex items-center gap-space-xs"><button aria-label="Audio Readout" class="w-11 h-11 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-fixed hover:bg-secondary-fixed-dim transition-colors"><span class="material-symbols-outlined text-[20px]">volume_up</span></button><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-secondary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsyaT4wNqYbIymZvfSLzn38YJoB8cx76w-Tq8naYtKgk4QIxWO23CofVBvj22KJiDahI3pIGqFxGLNAByRdB6v9Vw2reUhts4Jol305wkmIbd33e6dyea_eVY0aJWC1TOKnUNouzwzd8ZLXWawZdvu0fpv9bGlLekGvedrbAb15bg9jz5JTPRzzab3Fe3NjHunzER-0I3BI7u4U8UJQnoKSBLiM1CwQyYVkrENSNA"></div></div></header><main class="flex-1 w-full max-w-lg mx-auto px-gutter pt-16 pb-8 bg-surface"><div class="flex flex-col w-full relative select-none pb-24">
+<!-- Immersive Viewfinder Box -->
+<div class="relative w-full h-[620px] rounded-3xl overflow-hidden shadow-2xl bg-inverse-surface">
+<!-- Camera Feed Backdrop -->
+<img class="absolute inset-0 w-full h-full object-cover brightness-[0.92] contrast-[1.05]" data-alt="Close up photography of a vibrant green tomato plant leaf held steadily outdoors in natural agricultural daylight. The leaf exhibits distinct early blight necrotic brown concentric rings and small fungal lesions, with sunlit moisture and natural foliage textures in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3b-dQutLU7hIWsBOtR-wRAFJeMB7pajuc1jKuGJWiOVHamDUnMSHBDVJH8P0YwwqvD8IT7fFuYll7g2WllES_RrnviW14ixO4z0h18JFCxH6RBYAq_R7CtNqcDGcXSJYHWbrrrMU6-Fiacm8-wH2iWhCOfgB-eoYxqy89H_R29X0JlhC3EZD5T62tCS1yuixWbW70ArXGbJUgJZT17HxJt3HtJWbNhO6RK8q-8Eg">
+<!-- Environmental Vignette Scrim -->
+<div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none"></div>
+<!-- Live Scanner HUD Grid Lines -->
+<div class="absolute inset-0 opacity-20 pointer-events-none">
+<svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern height="48" id="scanner-grid" patternUnits="userSpaceOnUse" width="48">
+<path d="M 48 0 L 0 0 0 48" fill="none" stroke="#a7d2a2" stroke-width="0.75"></path>
+</pattern>
+</defs>
+<rect fill="url(#scanner-grid)" height="100%" width="100%"></rect>
+</svg>
+</div><div id="gradCamOverlay" class="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-70 mix-blend-screen"><div class="absolute top-24 right-12 w-48 h-48 rounded-full bg-red-500/40 blur-2xl"></div><div class="absolute top-28 right-16 w-32 h-32 rounded-full bg-amber-400/50 blur-xl"></div><div class="absolute top-36 right-20 w-20 h-20 rounded-full bg-emerald-400/30 blur-lg"></div></div>
+<!-- Top Telemetry & Status Bar -->
+<div class="absolute top-4 inset-x-4 flex flex-col gap-2 z-20">
+<div class="flex items-center justify-between gap-2"><div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md text-surface-container-lowest"><span class="w-2 h-2 rounded-full bg-primary-fixed-dim animate-ping"></span><span class="font-label-sm text-label-sm tracking-wider uppercase font-bold text-secondary-container">Vision AI</span><span class="text-white/40 text-xs">•</span><span class="font-label-sm text-label-sm text-white/80">Edge Vision</span></div><div class="flex items-center gap-1.5"><button id="gradCamToggleBtn" onclick="toggleGradCam()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-surface-container-lowest transition-all"><span class="material-symbols-outlined text-[15px] text-primary-fixed-dim">blur_on</span><span id="gradCamStatusText" class="font-label-sm text-label-sm font-semibold text-primary-fixed-dim">XAI: ON</span></button><button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-container/90 backdrop-blur-md text-on-primary shadow-sm hover:scale-105 active:scale-95 transition-transform" id="audioToggleBtn" onclick="toggleVoiceGuide()"><span class="material-symbols-outlined text-[16px] text-secondary-container" id="speakerIcon">volume_up</span><span class="font-label-sm text-label-sm tracking-tight font-semibold" id="speakerText">Center Leaf</span></button></div></div>
+<!-- Real-time Inference Stats Chip -->
+<div class="self-start flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/45 backdrop-blur-sm text-white/90">
+<span class="material-symbols-outlined text-[14px] text-secondary-fixed">bolt</span>
+<span class="font-label-sm text-label-sm font-semibold tracking-wide text-secondary-fixed">42ms Inference</span>
+<span class="text-white/30">•</span>
+<span class="font-label-sm text-label-sm text-white/70">Edge Offline</span>
+</div>
+</div>
+<!-- Viewfinder Reticle & Target Framing -->
+<div class="absolute inset-0 flex items-center justify-center p-8 pointer-events-none">
+<div class="relative w-full max-w-[290px] aspect-square flex items-center justify-center">
+<!-- Sage Green Geometric Reticle Bracket Corners -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" fill="none" viewBox="0 0 290 290" xmlns="http://www.w3.org/2000/svg">
+<!-- Top Left Bracket -->
+<path d="M 40 4 H 12 C 7.58 4 4 7.58 4 12 V 40" stroke="#74b574" stroke-linecap="round" stroke-width="3.5"></path>
+<!-- Top Right Bracket -->
+<path d="M 250 4 H 278 C 282.42 4 286 7.58 286 12 V 40" stroke="#74b574" stroke-linecap="round" stroke-width="3.5"></path>
+<!-- Bottom Left Bracket -->
+<path d="M 4 250 V 278 C 4 282.42 7.58 286 12 286 H 40" stroke="#74b574" stroke-linecap="round" stroke-width="3.5"></path>
+<!-- Bottom Right Bracket -->
+<path d="M 286 250 V 278 C 286 282.42 282.42 286 278 286 H 250" stroke="#74b574" stroke-linecap="round" stroke-width="3.5"></path>
+<!-- Subtle Central Leaf Watermark Silhouette -->
+<path d="M145 75 C190 95 205 155 170 205 C150 235 145 245 145 245 C145 245 140 235 120 205 C85 155 100 95 145 75 Z" fill="none" stroke="#d2eac3" stroke-dasharray="4 4" stroke-opacity="0.45" stroke-width="1.2"></path>
+<path d="M145 80 L145 240 M145 130 C160 120 175 125 180 130 M145 160 C165 150 178 156 182 165 M145 145 C130 135 115 140 110 148 M145 180 C125 172 114 178 108 188" stroke="#d2eac3" stroke-dasharray="3 3" stroke-opacity="0.35" stroke-width="1"></path>
+</svg>
+<!-- Scanning Ray Sweep Bar Animation -->
+<div class="absolute inset-x-2 h-1 bg-gradient-to-r from-transparent via-primary-fixed-dim to-transparent opacity-80 shadow-[0_0_12px_#74b574] animate-[pulse_2s_infinite]"></div>
+<!-- Live AI Disease Detection Box (Leaf Blight Tagging) -->
+<div class="absolute top-10 right-4 w-44 rounded-xl bg-error/15 p-2 backdrop-blur-[2px] transition-all transform animate-[bounce_3s_infinite]">
+<!-- Outlined Box Target -->
+<div class="w-full h-24 rounded-lg bg-error/10 relative flex flex-col justify-between p-1.5 shadow-[0_0_16px_rgba(186,26,26,0.4)]">
+<!-- Detection Tag Anchor -->
+<div class="-mt-6 self-start flex items-center gap-1 px-2 py-0.5 rounded-full bg-error text-on-error shadow-md">
+<span class="material-symbols-outlined text-[13px] text-white">warning</span>
+<span class="font-label-sm text-label-sm uppercase font-bold tracking-tight">NAB Alert</span>
+</div>
+<!-- Target Crosshair -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-error/60">
+<span class="material-symbols-outlined text-[28px]">crisis_alert</span>
+</div>
+<!-- Detection Label Tag -->
+<div class="bg-black/85 backdrop-blur-md rounded-md p-1.5 text-left z-10">
+<p class="font-label-sm text-label-sm text-white font-bold tracking-tight leading-tight">
+                Leaf Blight detected
+              </p>
+<div class="flex items-center justify-between gap-1 mt-0.5">
+<span class="font-body-sm text-body-sm text-error-container font-semibold">Alternaria solani</span>
+<span class="font-label-sm text-label-sm text-secondary-fixed font-bold">94.6% Conf.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Contextual Guidance Instruction Pill -->
+<div class="absolute bottom-28 inset-x-6 flex justify-center pointer-events-none z-20">
+<div class="flex items-center gap-2 px-4 py-2 rounded-full bg-black/75 backdrop-blur-md text-surface-container-lowest shadow-lg">
+<span class="material-symbols-outlined text-[18px] text-secondary-fixed animate-spin">sync</span>
+<span class="font-label-md text-label-md tracking-tight font-medium">Hold still for 1s to auto-capture or tap shutter</span>
+</div>
+</div>
+<!-- Secondary Quick Lens Switchers -->
+<div class="absolute bottom-20 inset-x-8 flex items-center justify-between z-20">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md text-white/90 hover:bg-black/60 transition-colors" onclick="toggleLensMode(this)">
+<span class="material-symbols-outlined text-[16px] text-secondary-fixed">zoom_out</span>
+<span class="font-label-sm text-label-sm font-semibold">Switch to Wide Angle</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md text-white/90 hover:bg-black/60 transition-colors" onclick="triggerVoicePrompt()">
+<span class="material-symbols-outlined text-[16px] text-secondary-fixed">graphic_eq</span>
+<span class="font-label-sm text-label-sm font-semibold">Audio Guide</span>
+</button>
+</div>
+<!-- Bottom Camera Controls Dock -->
+<div class="absolute bottom-3 inset-x-4 flex items-center justify-around z-20 pt-2 pb-1">
+<!-- Flashlight / Torch Toggle -->
+<button aria-label="Toggle Torch" class="w-13 h-13 p-3.5 rounded-full bg-white/15 backdrop-blur-lg text-white hover:bg-white/25 active:scale-90 transition-all flex items-center justify-center shadow-md" id="torchButton" onclick="toggleTorch()">
+<span class="material-symbols-outlined text-[24px]" id="torchIcon">flash_off</span>
+</button>
+<!-- Shutter Button with Pulsing AI Ring -->
+<div class="relative flex items-center justify-center">
+<!-- Ambient Glowing Aura -->
+<div class="absolute -inset-2.5 rounded-full bg-secondary-container/40 blur-md animate-pulse"></div>
+<button aria-label="Capture Plant Disease Leaf Photo" class="relative w-20 h-20 rounded-full bg-white p-1.5 flex items-center justify-center shadow-2xl active:scale-95 transition-transform" id="shutterAction" onclick="executeCapture()">
+<div class="w-full h-full rounded-full bg-primary-container flex items-center justify-center text-secondary-fixed group-hover:bg-primary transition-colors shadow-inner">
+<span class="material-symbols-outlined text-[32px] transition-transform duration-300" id="shutterIcon">spa</span>
+</div>
+</button>
+</div>
+<!-- Photo Gallery Picker Button -->
+<button aria-label="Select Photo from Library" class="w-13 h-13 p-3.5 rounded-full bg-white/15 backdrop-blur-lg text-white hover:bg-white/25 active:scale-90 transition-all flex items-center justify-center shadow-md" onclick="triggerPhotoLibrary()">
+<span class="material-symbols-outlined text-[24px]">photo_library</span>
+</button>
+</div>
+</div>
+<!-- Real-time Diagnostic Summary Drawer -->
+<div class="mt-4 w-full flex flex-col gap-3.5"><div class="bg-surface-container-lowest rounded-3xl p-3 shadow-sm border border-surface-container-highest/50"><div class="text-xs font-bold text-on-surface-variant uppercase tracking-wider px-2 py-1 flex items-center justify-between"><span>Diagnostic Confidence Mode</span><span class="text-[11px] font-semibold text-primary">Interactive Test Bench</span></div><div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-1"><button onclick="switchDiagnosisState('confirmed')" id="btn-state-confirmed" class="state-tab-btn flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-xs font-semibold bg-primary text-on-primary shadow-sm transition-all"><span class="material-symbols-outlined text-[16px]">check_circle</span><span>Confirmed (≥75%)</span></button><button onclick="switchDiagnosisState('uncertain')" id="btn-state-uncertain" class="state-tab-btn flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-xs font-semibold bg-surface-container-low text-on-surface-variant hover:bg-surface-container transition-all"><span class="material-symbols-outlined text-[16px]">help</span><span>Uncertain (&lt;75%)</span></button><button onclick="switchDiagnosisState('abiotic')" id="btn-state-abiotic" class="state-tab-btn flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-xs font-semibold bg-surface-container-low text-on-surface-variant hover:bg-surface-container transition-all"><span class="material-symbols-outlined text-[16px]">eco</span><span>Abiotic Stress</span></button><button onclick="switchDiagnosisState('ood')" id="btn-state-ood" class="state-tab-btn flex items-center justify-center gap-1 py-2 px-2 rounded-xl text-xs font-semibold bg-surface-container-low text-on-surface-variant hover:bg-surface-container transition-all"><span class="material-symbols-outlined text-[16px]">image_not_supported</span><span>Non-Leaf OOD</span></button></div></div><div id="view-confirmed" class="state-view flex flex-col gap-3.5"><div class="bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-surface-container-highest/50 flex flex-col gap-3.5"><div class="flex items-start justify-between gap-2"><div><div class="flex items-center gap-1.5 text-xs font-bold uppercase text-primary tracking-wider mb-1"><span class="w-2 h-2 rounded-full bg-primary"></span><span>Solanaceae Crop Match</span></div><h2 class="font-headline-sm text-headline-sm text-on-surface font-bold leading-tight">Tomato (Solanum lycopersicum)</h2><p class="font-body-md text-body-md text-error font-semibold mt-0.5">Early Blight (Alternaria solani)</p></div><div class="flex flex-col items-end gap-1"><span class="px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-bold flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">verified</span> 94.6% Confirmed</span><span class="px-2 py-0.5 rounded-full bg-surface-container-low text-on-surface-variant text-[11px] font-medium">Field Lux: Optimal</span></div></div><div class="flex flex-col gap-2 pt-2 border-t border-surface-container-highest/40"><div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-on-surface-variant"><span>Top 3 Differential Predictions</span><span class="text-[11px] font-semibold text-primary">Multiclass AI</span></div><div class="flex flex-col gap-2"><div class="p-2.5 rounded-xl bg-surface-container-low border border-secondary-container flex flex-col gap-1.5 shadow-sm"><div class="flex items-center justify-between text-xs"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-primary"></span><span class="font-bold text-primary text-[13px]">Early Blight (Alternaria solani)</span></div><span class="px-2 py-0.5 rounded-full bg-primary text-on-primary font-bold text-xs">94.6%</span></div><div class="w-full bg-surface-container-highest/50 rounded-full h-2 overflow-hidden"><div class="bg-primary h-2 rounded-full" style="width: 94.6%"></div></div></div><div class="p-2.5 rounded-xl bg-surface-container-lowest border border-surface-container-highest/40 flex flex-col gap-1.5"><div class="flex items-center justify-between text-xs"><span class="font-medium text-on-surface text-[12px]">Late Blight (Phytophthora infestans)</span><span class="text-on-surface-variant font-semibold text-xs">3.2%</span></div><div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden"><div class="bg-secondary h-1.5 rounded-full" style="width: 3.2%"></div></div></div><div class="p-2.5 rounded-xl bg-surface-container-lowest border border-surface-container-highest/40 flex flex-col gap-1.5"><div class="flex items-center justify-between text-xs"><span class="font-medium text-on-surface text-[12px]">Septoria Leaf Spot (Septoria lycopersici)</span><span class="text-on-surface-variant font-semibold text-xs">1.1%</span></div><div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden"><div class="bg-outline h-1.5 rounded-full" style="width: 1.1%"></div></div></div></div></div></div></div><div id="view-uncertain" class="state-view hidden flex-col gap-3.5"><div class="bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-surface-container-highest/50 flex flex-col gap-3.5"><div class="flex items-center gap-2 text-amber-700 bg-amber-50 p-3 rounded-2xl border border-amber-200"><span class="material-symbols-outlined text-[24px]">warning_amber</span><div><h3 class="font-bold text-xs uppercase tracking-wider">Uncertain Biotic Diagnosis (&lt;75%)</h3><p class="text-xs text-amber-900 mt-0.5">Visual patterns overlap between fungal blight and bacterial speck.</p></div></div><div class="flex flex-col gap-2.5"><h4 class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Differential Top-3 Predictions</h4><div class="flex flex-col gap-1.5"><div class="flex justify-between text-xs font-semibold"><span>1. Alternaria solani (Early Blight)</span><span class="text-primary font-bold">64.2%</span></div><div class="w-full bg-surface-container rounded-full h-2 overflow-hidden"><div class="bg-primary h-2 rounded-full" style="width: 64.2%"></div></div></div><div class="flex flex-col gap-1.5"><div class="flex justify-between text-xs font-semibold"><span>2. Septoria lycopersici (Leaf Spot)</span><span class="text-secondary font-bold">22.1%</span></div><div class="w-full bg-surface-container rounded-full h-2 overflow-hidden"><div class="bg-secondary h-2 rounded-full" style="width: 22.1%"></div></div></div><div class="flex flex-col gap-1.5"><div class="flex justify-between text-xs font-semibold"><span>3. Corynespora cassiicola (Target Spot)</span><span class="text-outline font-bold">13.7%</span></div><div class="w-full bg-surface-container rounded-full h-2 overflow-hidden"><div class="bg-outline font-bold h-2 rounded-full" style="width: 13.7%"></div></div></div></div></div></div><div id="view-abiotic" class="state-view hidden flex-col gap-3.5"><div class="bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-surface-container-highest/50 flex flex-col gap-3.5"><div class="flex items-center gap-2 text-emerald-800 bg-secondary-container/40 p-3 rounded-2xl border border-secondary-container"><span class="material-symbols-outlined text-[24px]">nature_people</span><div><h3 class="font-bold text-xs uppercase tracking-wider">Abiotic Nutrient Stress Detected</h3><p class="text-xs text-secondary mt-0.5">Interveinal Chlorosis &amp; Potassium Marginal Scorch</p></div></div><div class="p-3.5 rounded-2xl bg-error/10 border border-error/20 flex flex-col gap-1.5"><div class="flex items-center gap-1.5 text-error font-bold text-xs"><span class="material-symbols-outlined text-[18px]">block</span><span>Chemical Fungicides Locked</span></div><p class="text-xs text-on-surface-variant leading-relaxed">Non-pathogenic physiological disorder. Do not apply antifungal chemicals or bactericides; they will stress the plant without benefit.</p></div><div class="flex flex-col gap-2"><h4 class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Soil &amp; Foliar Nutrition Protocol</h4><div class="grid grid-cols-2 gap-2 text-xs"><div class="p-2.5 rounded-xl bg-surface-container-low border border-surface-container-highest/40"><span class="font-bold text-primary block">Potassium Nitrate</span><span class="text-on-surface-variant text-[11px]">13-0-45 foliar spray @ 5g/L water at early evening.</span></div><div class="p-2.5 rounded-xl bg-surface-container-low border border-surface-container-highest/40"><span class="font-bold text-primary block">Soil Test &amp; Humic</span><span class="text-on-surface-variant text-[11px]">Check soil pH (optimal 6.0-6.8) &amp; add compost mulch.</span></div></div></div><button class="w-full min-h-[44px] rounded-2xl bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-2 shadow-sm" onclick="alert('Fertigation schedule generated!')"><span class="material-symbols-outlined text-[18px]">schedule</span><span>Generate Foliar Fertigation Schedule</span></button></div></div><div id="view-ood" class="state-view hidden flex-col gap-3.5"><div class="bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-surface-container-highest/50 flex flex-col gap-3.5"><div class="flex items-center gap-2 text-rose-800 bg-error-container/50 p-3 rounded-2xl border border-error-container"><span class="material-symbols-outlined text-[24px]">hide_image</span><div><h3 class="font-bold text-xs uppercase tracking-wider">Out-of-Distribution (Non-Leaf Rejection)</h3><p class="text-xs text-on-surface-variant mt-0.5">Not a clear crop leaf. AI inference withheld.</p></div></div><div class="flex flex-col gap-2"><h4 class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Guidance for Accurate Crop Diagnostics</h4><div class="grid grid-cols-3 gap-2 text-center text-xs"><div class="p-3 rounded-xl bg-surface-container-low flex flex-col items-center gap-1"><span class="material-symbols-outlined text-primary text-[22px]">wb_sunny</span><span class="font-bold text-[11px]">Natural Light</span><span class="text-[10px] text-on-surface-variant">Avoid heavy shade &amp; backlighting</span></div><div class="p-3 rounded-xl bg-surface-container-low flex flex-col items-center gap-1"><span class="material-symbols-outlined text-primary text-[22px]">center_focus_strong</span><span class="font-bold text-[11px]">15-20cm Range</span><span class="text-[10px] text-on-surface-variant">Keep single leaf centered</span></div><div class="p-3 rounded-xl bg-surface-container-low flex flex-col items-center gap-1"><span class="material-symbols-outlined text-primary text-[22px]">back_hand</span><span class="font-bold text-[11px]">Hold Steady</span><span class="text-[10px] text-on-surface-variant">Prevent motion blur</span></div></div></div><button class="w-full min-h-[48px] rounded-2xl bg-primary-container text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all" onclick="alert('Camera calibrated. Align leaf in reticle.')"><span class="material-symbols-outlined text-[20px] text-secondary-fixed">photo_camera</span><span>Retake Crop Photo Now</span></button></div></div><div class="bg-surface-container-lowest rounded-3xl p-4 shadow-sm border border-surface-container-highest/50 flex flex-col gap-2"><button onclick="toggleScientistDrawer()" class="w-full flex items-center justify-between text-left text-xs font-bold uppercase tracking-wider text-primary"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[18px]">psychology_alt</span><span>Explainable AI (XAI) &amp; Agronomic Telemetry</span></div><span id="scientistDrawerIcon" class="material-symbols-outlined text-[20px] transition-transform">expand_more</span></button><div id="scientistDrawerContent" class="hidden flex-col gap-2 pt-2 border-t border-surface-container-highest/40 text-xs"><div class="grid grid-cols-2 gap-2"><div class="bg-surface-container-low p-2 rounded-xl"><span class="text-[10px] text-on-surface-variant block uppercase font-semibold">Canonical Pathology ID</span><span class="font-mono font-bold text-primary">ICAR-PATH-TOM-842</span></div><div class="bg-surface-container-low p-2 rounded-xl"><span class="text-[10px] text-on-surface-variant block uppercase font-semibold">Unique Scan ID</span><span class="font-mono font-bold text-on-surface">KST-2026-9941A</span></div><div class="bg-surface-container-low p-2 rounded-xl"><span class="text-[10px] text-on-surface-variant block uppercase font-semibold">Shannon Entropy</span><span class="font-mono font-bold text-secondary">0.182 bits</span></div><div class="bg-surface-container-low p-2 rounded-xl"><span class="text-[10px] text-on-surface-variant block uppercase font-semibold">Model Engine</span><span class="font-mono font-bold text-on-surface truncate">YOLOv8-CropML+EdgeNet v2.4</span></div></div><div class="p-2.5 rounded-xl bg-surface-container-low text-on-surface-variant text-[11px] leading-relaxed"><span class="font-semibold text-primary">XAI Method:</span> Grad-CAM activation emphasizes concentric ring boundaries with peak saliency on necrotic fungal chlorosis.</div></div></div></div>
+</div>
+<script>
+  let torchState = false;
+  let voiceGuideActive = true;
+  let wideAngleActive = false;
+
+  function toggleTorch() {
+    torchState = !torchState;
+    const icon = document.getElementById('torchIcon');
+    const btn = document.getElementById('torchButton');
+    if (torchState) {
+      icon.textContent = 'flash_on';
+      btn.classList.add('bg-white', 'text-on-surface');
+      btn.classList.remove('bg-white/15', 'text-white');
+    } else {
+      icon.textContent = 'flash_off';
+      btn.classList.remove('bg-white', 'text-on-surface');
+      btn.classList.add('bg-white/15', 'text-white');
+    }
+  }
+
+  function toggleVoiceGuide() {
+    voiceGuideActive = !voiceGuideActive;
+    const icon = document.getElementById('speakerIcon');
+    const text = document.getElementById('speakerText');
+    if (voiceGuideActive) {
+      icon.textContent = 'volume_up';
+      text.textContent = 'Center Leaf In Frame';
+    } else {
+      icon.textContent = 'volume_off';
+      text.textContent = 'Voice Guide Muted';
+    }
+  }
+
+  function toggleLensMode(button) {
+    wideAngleActive = !wideAngleActive;
+    const label = button.querySelector('span:last-child');
+    if (wideAngleActive) {
+      label.textContent = 'Switch to Macro 1x';
+    } else {
+      label.textContent = 'Switch to Wide Angle';
+    }
+  }
+
+  function triggerVoicePrompt() {
+    const text = document.getElementById('speakerText');
+    const original = text.textContent;
+    text.textContent = 'Audio: Hold 15cm from lesion';
+    setTimeout(() => {
+      text.textContent = original;
+    }, 2400);
+  }
+
+  function triggerPhotoLibrary() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.click();
+  }
+
+  function executeCapture() {
+    const shutter = document.getElementById('shutterAction');
+    const icon = document.getElementById('shutterIcon');
+    icon.textContent = 'hourglass_top';
+    shutter.classList.add('scale-90');
+    setTimeout(() => {
+      shutter.classList.remove('scale-90');
+      icon.textContent = 'check';
+      setTimeout(() => {
+        icon.textContent = 'spa';
+      }, 800);
+    }, 500);
+  }
+
+  function openPrescriptionDrawer() {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }
+</script></main>
+
+
+
+
+
+
+
+
+
+</body></html>

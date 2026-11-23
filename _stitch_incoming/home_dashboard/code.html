@@ -1,0 +1,286 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "primary": "#214623",
+          "surface-container": "#e7f1e3",
+          "inverse-surface": "#2a3329",
+          "surface": "#f2fcee",
+          "surface-tint": "#416740",
+          "on-error": "#ffffff",
+          "surface-container-highest": "#dbe5d8",
+          "error": "#ba1a1a",
+          "on-tertiary-container": "#b5d1b7",
+          "on-primary-fixed": "#002105",
+          "on-tertiary-fixed": "#08200f",
+          "on-tertiary-fixed-variant": "#344c38",
+          "surface-dim": "#d3ddcf",
+          "tertiary-fixed": "#cdeacf",
+          "outline": "#72796f",
+          "on-tertiary": "#ffffff",
+          "on-surface": "#151e15",
+          "tertiary-container": "#425b46",
+          "tertiary-fixed-dim": "#b2ceb4",
+          "on-secondary-container": "#203a1d",
+          "surface-container-low": "#edf7e8",
+          "error-container": "#ffdad6",
+          "inverse-on-surface": "#eaf4e6",
+          "secondary-container": "#c4e6b7",
+          "on-secondary-fixed": "#0e2008",
+          "on-secondary": "#ffffff",
+          "on-secondary-fixed-variant": "#394c30",
+          "on-error-container": "#93000a",
+          "primary-fixed": "#c2eebd",
+          "outline-variant": "#c2c8bd",
+          "primary-container": "#26472d",
+          "primary-fixed-dim": "#a7d2a2",
+          "on-primary-container": "#cdeacf",
+          "surface-container-lowest": "#ffffff",
+          "inverse-primary": "#a7d2a2",
+          "on-primary": "#ffffff",
+          "on-surface-variant": "#424940",
+          "tertiary": "#2b4330",
+          "secondary-fixed": "#d2eac3",
+          "surface-bright": "#f2fcee",
+          "secondary-fixed-dim": "#b7cda8",
+          "secondary": "#3d6138",
+          "background": "#f2fcee",
+          "on-primary-fixed-variant": "#294f2b",
+          "surface-variant": "#dbe5d8",
+          "surface-container-high": "#e1ebdd",
+          "on-background": "#151e15"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "space-sm": "0.5rem",
+          "gutter": "1rem",
+          "space-xs": "0.25rem",
+          "space-lg": "1.25rem",
+          "space-md": "0.75rem",
+          "space-xl": "1.75rem",
+          "margin": "1rem"
+        },
+        "fontFamily": {
+          "headline-lg": ["Plus Jakarta Sans"],
+          "label-md": ["Plus Jakarta Sans"],
+          "body-sm": ["Plus Jakarta Sans"],
+          "body-md": ["Plus Jakarta Sans"],
+          "label-lg": ["Plus Jakarta Sans"],
+          "headline-lg-mobile": ["Plus Jakarta Sans"],
+          "headline-md": ["Plus Jakarta Sans"],
+          "label-sm": ["Plus Jakarta Sans"],
+          "headline-sm": ["Plus Jakarta Sans"],
+          "body-lg": ["Plus Jakarta Sans"]
+        },
+        "fontSize": {
+          "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+          "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "600" }],
+          "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+          "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+          "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+          "headline-lg-mobile": ["26px", { "lineHeight": "34px", "fontWeight": "700" }],
+          "headline-md": ["22px", { "lineHeight": "30px", "fontWeight": "600" }],
+          "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "600" }],
+          "headline-sm": ["18px", { "lineHeight": "26px", "fontWeight": "600" }],
+          "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "500" }]
+        }
+      }
+    }
+  }
+</script><style>@layer base{html,body{width:100%;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl border-b border-surface-container-highest/60 shadow-[0_1px_8px_rgba(33,70,35,0.05)]"><div class="h-16 px-gutter max-w-lg mx-auto flex items-center justify-between gap-space-xs"><div class="flex items-center gap-space-sm min-w-0 flex-1"><div class="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container-lowest border border-surface-container-highest/60 flex items-center justify-center p-0.5"><img alt="KisanSetu Logo" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsx3J2gfkQ5B9pfNZv2mp56h3aYiDiLmdmrWIDU30K_JINylWBMzc5m4UJAPJcgWT4COTUZmDURbxJQcKkI0gcFviwgk3GuC3TmH8xK67QMNKwgtZ3NkrFMaNiCfoc_c5GrA-x5AvXnJAz4yISSVaQxxZXGNg_dU8m8d7XyNqAtBHNc28gbXyA2faiyuWk0E2Ev26f1R-voKy5bKyzc3KbEDMW5dAPsqT1z63beHuBe76z8ga9h2Fg"></div><div class="flex flex-col min-w-0"><div class="flex items-center gap-1.5"><span class="font-headline-sm text-headline-sm text-primary font-bold truncate tracking-tight">KisanSetu</span><span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-secondary mr-1 animate-pulse"></span>Online</span></div><span class="font-label-sm text-label-sm text-on-surface-variant truncate">Smart Farm Assistant</span></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><div class="inline-flex items-center rounded-full bg-surface-container-low border border-surface-container-highest/70 p-0.5 text-label-sm font-semibold"><button class="px-2 py-1 rounded-full bg-primary text-on-primary font-bold shadow-sm transition-colors" aria-label="English">EN</button><button class="px-1.5 py-1 text-on-surface-variant hover:text-primary transition-colors" aria-label="Hindi">हिं</button><span class="text-outline-variant text-[10px]">|</span><button class="px-1.5 py-1 text-on-surface-variant hover:text-primary transition-colors" aria-label="Marathi">मरा</button></div><button aria-label="Audio Assistant" class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center hover:bg-secondary-fixed transition-colors"><span class="material-symbols-outlined text-[20px]">volume_up</span></button><div class="flex items-center justify-center p-0.5 rounded-full ring-2 ring-primary/20"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsyaT4wNqYbIymZvfSLzn38YJoB8cx76w-Tq8naYtKgk4QIxWO23CofVBvj22KJiDahI3pIGqFxGLNAByRdB6v9Vw2reUhts4Jol305wkmIbd33e6dyea_eVY0aJWC1TOKnUNouzwzd8ZLXWawZdvu0fpv9bGlLekGvedrbAb15bg9jz5JTPRzzab3Fe3NjHunzER-0I3BI7u4U8UJQnoKSBLiM1CwQyYVkrENSNA"></div></div></div></header><main class="flex-1 w-full max-w-lg mx-auto px-gutter pt-16 pb-28 bg-surface"><div class="flex flex-col w-full space-y-space-md">
+<!-- Location & Spray Readiness Pill Strip -->
+<div class="w-full bg-surface-container-lowest border border-surface-container-highest/60 rounded-2xl p-3 shadow-sm flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="material-symbols-outlined text-secondary text-[20px] flex-shrink-0">location_on</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface truncate">Nashik, Maharashtra</span>
+<span class="font-body-sm text-body-sm text-secondary font-semibold truncate">28°C • Optimal Spray Window</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 bg-surface-container px-2.5 py-1 rounded-full border border-surface-container-highest/60 flex-shrink-0">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">Offline Ready</span>
+</div>
+</div>
+<!-- High Priority Voice Consultation Banner -->
+
+<!-- Central Camera Scanner Hero Card -->
+<div class="relative w-full rounded-2xl bg-surface-container-lowest border border-surface-container-highest/60 shadow-sm overflow-hidden p-4">
+<!-- Viewfinder Plant Target Frame -->
+<div class="relative w-full h-44 rounded-xl bg-surface-container-high/40 overflow-hidden flex flex-col items-center justify-center">
+<!-- Background Field Preview -->
+<img class="absolute inset-0 w-full h-full object-cover opacity-85" data-alt="Close-up photorealistic shot of lush green agricultural crop leaves in warm natural Indian morning sunlight, subtle camera depth of field, healthy organic foliage ready for mobile computer vision scanning." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAn_Frszv3NQvbv6WsnicZC9NDBwrAXy7WTwzt_WpoBeeNdu4qrqaNYkndQaIBhZOlCAQioqVro6AMT3BYQmEgo3du5stINOTlfYeT_YJgHiczFLo5tZlqAgG3pLXOdDlrcn9TxuRIzTQ7Z0KWhC3RrDo985rMGHKJ3JmOnDhrRcVKFjrnp1QiatIf8gmrx1TMC9-M7xVgXWnnS89T0r0AKfAau9JqBWC1Emf2KCXw">
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/30 to-transparent"></div>
+<!-- Corner Reticle Target Graphic -->
+<div class="absolute inset-4 pointer-events-none flex flex-col justify-between">
+<div class="flex justify-between">
+<span class="w-4 h-4 border-t-2 border-l-2 border-secondary-fixed rounded-tl"></span>
+<span class="w-4 h-4 border-t-2 border-r-2 border-secondary-fixed rounded-tr"></span>
+</div>
+<div class="flex justify-between">
+<span class="w-4 h-4 border-b-2 border-l-2 border-secondary-fixed rounded-bl"></span>
+<span class="w-4 h-4 border-b-2 border-r-2 border-secondary-fixed rounded-br"></span>
+</div>
+</div>
+<!-- Dynamic ML Confidence Inference Tag -->
+<div class="absolute top-2.5 px-3 py-1 rounded-full bg-inverse-surface/85 backdrop-blur-sm text-inverse-on-surface flex items-center gap-1.5 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed animate-pulse"></span>
+<span class="font-label-sm text-label-sm">Mobile v2.4 • Offline Ready</span>
+</div>
+<!-- Scan Reticle Center Icon -->
+<div class="relative z-10 w-12 h-12 rounded-full bg-surface-container-lowest/30 backdrop-blur-md flex items-center justify-center text-surface-container-lowest">
+<span class="material-symbols-outlined text-[28px]">center_focus_strong</span>
+</div>
+<div class="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-surface-container-lowest">
+<span class="font-label-sm text-label-sm font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-secondary-fixed">bolt</span>
+          1.2s High-Speed Neural Diagnosis
+        </span>
+<span class="font-label-sm text-label-sm bg-surface-container-lowest/20 px-2 py-0.5 rounded">98.4% Acc.</span>
+</div>
+</div>
+<!-- Diagnostic Details & Scanner Button -->
+<div class="mt-4 flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-primary font-bold tracking-tight">SCAN YOUR CROP</h2>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-bold">
+          Zero Data Used
+        </span>
+</div>
+
+<div class="mt-3 grid grid-cols-2 gap-2 w-full"><button id="open-scanner-cta" class="h-[52px] rounded-2xl bg-primary-container text-on-primary flex items-center justify-center gap-1.5 px-2 shadow-sm font-label-md text-label-md active:scale-[0.98] transition-all hover:bg-primary"><span class="material-symbols-outlined text-[20px]">photo_camera</span><span class="truncate font-bold">Camera Scanner</span></button><button id="upload-gallery-cta" class="h-[52px] rounded-2xl bg-surface-container border border-surface-container-highest/70 text-primary flex items-center justify-center gap-1.5 px-2 shadow-sm font-label-md text-label-md active:scale-[0.98] transition-all hover:bg-secondary-fixed"><span class="material-symbols-outlined text-[20px]">photo_library</span><span class="truncate font-bold">Gallery Upload</span></button></div>
+</div>
+</div>
+<!-- Quick Actions Grid (2x2 Cards) -->
+<div class="flex flex-col space-y-2">
+<div class="flex items-center justify-between">
+<h3 class="font-label-lg text-label-lg text-on-surface font-bold uppercase tracking-wider">Field Diagnostics</h3>
+<span class="font-label-sm text-label-sm text-secondary font-bold">View Farm Map</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm">
+<!-- Card 1: Crop Disease with Alert -->
+<div class="w-full bg-surface-container-lowest border border-surface-container-highest/60 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between active:scale-[0.98] transition-all">
+<div class="flex items-start justify-between">
+<div class="w-10 h-10 rounded-xl bg-error-container text-on-error-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">coronavirus</span>
+</div>
+<span class="w-2.5 h-2.5 rounded-full bg-error animate-ping"></span>
+</div>
+<div class="mt-3">
+<div class="flex items-center gap-1">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate">Crop Disease</span>
+</div>
+<div class="mt-1 flex items-center gap-1 text-error">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span class="font-label-sm text-label-sm font-bold truncate">94% High Blight Risk</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 truncate">Nashik regional alert</p>
+</div>
+</div>
+<!-- Card 2: Nutrient Check (N-P-K) -->
+<div class="w-full bg-surface-container-lowest border border-surface-container-highest/60 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between active:scale-[0.98] transition-all">
+<div class="flex items-start justify-between">
+<div class="w-10 h-10 rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">compost</span>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 bg-surface-container text-primary rounded-full font-bold border border-surface-container-highest/60">NPK 4:2:1</span>
+</div>
+<div class="mt-3">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate block">Nutrient Check</span>
+<p class="font-body-sm text-body-sm text-secondary font-bold mt-0.5 truncate">Soil &amp; Nitrogen Balance</p>
+<div class="w-full bg-surface-container rounded-full h-1.5 mt-2 overflow-hidden flex">
+<div class="bg-secondary h-full" style="width: 72%;"></div>
+</div>
+</div>
+</div>
+<!-- Card 3: My Crops & Active Plots -->
+<div class="w-full bg-surface-container-lowest border border-surface-container-highest/60 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between active:scale-[0.98] transition-all">
+<div class="flex items-start justify-between">
+<div class="w-10 h-10 rounded-xl bg-surface-container text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">agriculture</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-bold">2 Plots</span>
+</div>
+<div class="mt-3">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate block">My Crops</span>
+<p class="font-body-sm text-body-sm text-on-surface font-medium truncate mt-0.5">Wheat &amp; Cotton</p>
+<div class="flex items-center gap-1 mt-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">calendar_today</span>
+<span class="font-body-sm text-body-sm truncate">Plot A: 32 Days old</span>
+</div>
+</div>
+</div>
+<!-- Card 4: Weather & Spray Windows -->
+<div class="w-full bg-surface-container-lowest border border-surface-container-highest/60 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between active:scale-[0.98] transition-all">
+<div class="flex items-start justify-between">
+<div class="w-10 h-10 rounded-xl bg-[#fae8d7] text-[#6e3900] flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">rainy</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-[#6e3900]">umbrella</span>
+</div>
+<div class="mt-3">
+<span class="font-label-lg text-label-lg text-on-surface font-bold truncate block">Weather &amp; Spray</span>
+<p class="font-body-sm text-body-sm text-[#6e3900] font-bold mt-0.5 truncate">Rain alert tomorrow</p>
+<span class="font-label-sm text-label-sm text-error font-bold mt-0.5 block truncate">Avoid chemical spray</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Diagnostics Mini Feed -->
+<div class="w-full bg-surface-container-lowest border border-surface-container-highest/60 rounded-2xl p-3.5 shadow-sm flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-12 h-12 rounded-xl bg-surface-container overflow-hidden flex-shrink-0 relative">
+<img class="w-full h-full object-cover" data-alt="Macro close up photography of a vibrant green tomato plant leaf with dewdrops, clearly diagnosed as disease-free with sharp focus and clean botanical lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeQl7VZTyVPQfV6_JGx2OCuHC6VH3fggV8q1qR_8xQ8PBsODwFgieP_XxSPCN5DVVGlAmm4zB5RLaevZMtEzgwv-HjSrBX736DGpOchWHrdqaLRQyjrBu_ljvKTrwuO53hFPBrqyLRuAaMdju4OB7TlBp54lTN0ViwChNvcGqtrrzQXy8wDAy7F65SD_SMjVlhSBa7UhNvKLeilM0TH3md6IZ56AXJBiR-ocnp2fk">
+<span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-secondary text-surface-container-lowest rounded-tl flex items-center justify-center">
+<span class="material-symbols-outlined text-[10px]">check</span>
+</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md text-on-surface font-bold truncate">Tomato Leaf (Healthy)</span>
+<span class="px-2 py-0.5 bg-secondary-container text-on-secondary-container font-label-sm text-label-sm rounded-full font-bold">100%</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Plot B • Scanned 2 hrs ago</span>
+</div>
+</div>
+<!-- Audio Readout Pill -->
+<button aria-label="Listen to Diagnostic Audio" class="h-9 px-3 rounded-full bg-secondary-container text-on-secondary-container flex items-center gap-1 flex-shrink-0 active:scale-95 transition-transform font-bold hover:bg-secondary-fixed">
+<span class="material-symbols-outlined text-[16px]">volume_up</span>
+<span class="font-label-sm text-label-sm font-bold">Audio</span>
+</button>
+</div>
+</div>
+<script>
+  // Simple micro-interaction for scan and voice feedback
+  document.getElementById('open-scanner-cta')?.addEventListener('click', function() {
+    const scanLink = document.querySelector('a[data-path="scan-ai"]');
+    if (scanLink) scanLink.click();
+  });
+
+  document.getElementById('voice-trigger-btn')?.addEventListener('click', function() {
+    const voiceLink = document.querySelector('a[data-path="voice-assistant"]');
+    if (voiceLink) voiceLink.click();
+  });
+</script></main><div class="fixed bottom-0 w-full z-50 pointer-events-none pb-safe"><div class="max-w-lg mx-auto px-gutter pb-4"><nav class="pointer-events-auto relative w-full h-16 rounded-full bg-surface-container-lowest/95 backdrop-blur-xl border border-surface-container-highest/70 shadow-[0_8px_24px_-4px_rgba(33,70,35,0.14)] flex items-center justify-between px-space-sm" data-active-classes="text-primary font-bold"><a aria-current="page" class="flex-1 flex flex-col items-center justify-center h-full transition-colors text-primary font-bold" data-path="home" href="#"><span class="material-symbols-outlined text-[22px]">potted_plant</span><span class="font-label-sm text-label-sm">Home</span></a><div class="relative flex items-center justify-center px-space-xs"><a aria-label="Scan Crop AI" class="-top-5 relative w-14 h-14 rounded-full bg-primary-container text-on-primary flex flex-col items-center justify-center shadow-[0_8px_20px_rgba(38,71,45,0.35)] ring-4 ring-surface ring-offset-0 active:scale-95 transition-transform hover:bg-primary" data-path="scan-ai" href="#"><span class="material-symbols-outlined text-[26px]">photo_camera</span></a></div><a class="flex-1 flex flex-col items-center justify-center h-full text-on-surface-variant hover:text-primary transition-colors" data-path="voice-assistant" href="#"><span class="material-symbols-outlined text-[22px]">mic</span><span class="font-label-sm text-label-sm">Voice</span></a><a class="flex-1 flex flex-col items-center justify-center h-full text-on-surface-variant hover:text-primary transition-colors" data-path="farmer-profile" href="#"><span class="material-symbols-outlined text-[22px]">person</span><span class="font-label-sm text-label-sm">Profile</span></a></nav></div></div>
+
+
+
+
+
+
+
+
+
+</body></html>

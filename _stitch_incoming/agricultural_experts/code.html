@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><title>Florax Farmer AI</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;min-height:100%;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-tertiary-container": "#b5d1b7", "surface-variant": "#dbe5d8", "secondary-fixed": "#d2eac3", "primary": "#214623", "on-secondary-container": "#566a4b", "on-primary-fixed-variant": "#294f2b", "on-error-container": "#93000a", "outline": "#72796f", "inverse-primary": "#a7d2a2", "secondary": "#506446", "surface-container-high": "#e1ebdd", "on-tertiary": "#ffffff", "on-secondary": "#ffffff", "surface-tint": "#416740", "primary-container": "#385e38", "secondary-container": "#d2eac3", "surface-container-low": "#edf7e8", "surface-container-highest": "#dbe5d8", "on-primary": "#ffffff", "surface-container": "#e7f1e3", "on-secondary-fixed-variant": "#394c30", "on-tertiary-fixed": "#08200f", "inverse-on-surface": "#eaf4e6", "primary-fixed-dim": "#a7d2a2", "on-surface-variant": "#424940", "tertiary-fixed-dim": "#b2ceb4", "secondary-fixed-dim": "#b7cda8", "on-surface": "#151e15", "on-primary-fixed": "#002105", "on-primary-container": "#abd6a6", "background": "#f2fcee", "on-secondary-fixed": "#0e2008", "primary-fixed": "#c2eebd", "outline-variant": "#c2c8bd", "tertiary-fixed": "#cdeacf", "on-background": "#151e15", "on-tertiary-fixed-variant": "#344c38", "surface-container-lowest": "#ffffff", "inverse-surface": "#2a3329", "surface-bright": "#f2fcee", "surface-dim": "#d3ddcf", "on-error": "#ffffff", "error-container": "#ffdad6", "tertiary-container": "#425b46", "error": "ba1a1a", "tertiary": "#2b4330", "surface": "#f2fcee" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-sm": "0.5rem", "margin": "1rem", "gutter": "1rem", "space-xl": "1.75rem", "space-md": "0.75rem", "space-lg": "1.25rem", "space-xs": "0.25rem" }, fontFamily: { "body-lg": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"] }, fontSize: { "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "500" }], "headline-md": ["22px", { "lineHeight": "30px", "fontWeight": "600" }], "headline-sm": ["18px", { "lineHeight": "26px", "fontWeight": "600" }], "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }], "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }], "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "600" }], "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "headline-lg-mobile": ["26px", { "lineHeight": "34px", "fontWeight": "700" }], "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "600" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-background font-body-md text-body-md text-on-surface antialiased flex flex-col min-h-screen selection:bg-secondary-container selection:text-on-secondary-container"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(33,70,35,0.06)] pt-safe transition-all"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-xs"><button aria-label="Go back" class="w-11 h-11 flex items-center justify-center rounded-full text-primary hover:bg-surface-container active:bg-surface-container-high transition-colors -ml-1" onclick="history.back()" type="button"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-primary tracking-tight">Agricultural Experts</h1></div><div class="flex items-center gap-space-sm"><span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>Online</span><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-primary-fixed" src="https://lh3.googleusercontent.com/aida/ALJJyrCezJgWzgZkR94uRUHqSb83QWuCHVRn3y_sEkxORL0gpT7DScSvKxYqPhMpzbQsRrxLBQn65i0KBLAgSY2-QqiOmvhT_05_Y67WaBI2SPbeWBJSELSHyDvCQr3t3YuofIWHflaptZBupbGodvcEwT46EoRo4lIglMzQL8WWcgb8jkdAuqvBV6GVK3qK6KlcuLOdtKTgswCfsBOMzUjz_3M-l3dZFtuyQccJxuGqY7DmHzyjWneAfv0rDQ"/></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface px-margin"><div class="flex flex-col w-full pb-6 space-y-4">
+<!-- My Consultations Activity Status Card -->
+<section class="bg-surface-container-low rounded-2xl p-4 shadow-sm">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">assignment_turned_in</span>
+<h2 class="font-headline-sm text-headline-sm text-primary">My Consultations</h2>
+</div>
+<span class="font-label-sm text-label-sm text-secondary bg-surface-container px-2 py-0.5 rounded-full">3 Total</span>
+</div>
+<div class="grid grid-cols-1 gap-2.5">
+<!-- Active Pending Review -->
+<div class="bg-surface-container-lowest rounded-xl p-3 flex items-center justify-between shadow-sm cursor-pointer active:scale-[0.99] transition-transform">
+<div class="flex items-start gap-3 min-w-0">
+<div class="w-9 h-9 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px] animate-spin" style="animation-duration: 4s;">hourglass_top</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<span class="font-label-md text-label-md text-on-surface font-semibold">1 Pending Review</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 rounded-md bg-secondary-container/60 text-on-secondary-container">Scan #FLX-9941A</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Assigned to KVK Niphad • Field audit underway</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px] shrink-0 ml-1">chevron_right</span>
+</div>
+<!-- Completed Prescription Reports -->
+<div class="bg-surface-container-lowest rounded-xl p-3 flex items-center justify-between shadow-sm cursor-pointer active:scale-[0.99] transition-transform">
+<div class="flex items-start gap-3 min-w-0">
+<div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">task</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-md text-label-md text-on-surface font-semibold">2 Expert-Reviewed Reports</span>
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Tomato Powdery Mildew + Aphids treatment ready</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px] shrink-0 ml-1">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Search & Filter Controls -->
+<section class="space-y-3">
+<!-- Search Bar -->
+<div class="relative flex items-center w-full">
+<span class="material-symbols-outlined absolute left-4 text-outline text-[22px] pointer-events-none">search</span>
+<input class="w-full h-12 pl-12 pr-4 bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md text-body-md rounded-2xl shadow-sm focus:outline-none focus:bg-surface-container-lowest focus:shadow-md transition-all" placeholder="Search by crop, disease, or expert name..." type="search"/>
+</div>
+<!-- Category Filters (Horizontal Scroll) -->
+<div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-margin px-margin">
+<button class="shrink-0 px-4 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md hover:bg-surface-container active:scale-95 transition-all">
+        All
+      </button>
+<button class="shrink-0 px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-sm active:scale-95 transition-all flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">biotech</span>
+        Plant Pathologists
+      </button>
+<button class="shrink-0 px-4 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md hover:bg-surface-container active:scale-95 transition-all">
+        Agronomists
+      </button>
+<button class="shrink-0 px-4 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md hover:bg-surface-container active:scale-95 transition-all">
+        Soil Health
+      </button>
+<button class="shrink-0 px-4 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md hover:bg-surface-container active:scale-95 transition-all">
+        Horticulture
+      </button>
+</div>
+</section>
+<!-- Verified Specialist Directory -->
+<section class="space-y-3 pt-1">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-primary">Available Specialists</h2>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+        12 Online / In Field
+      </div>
+</div>
+<!-- Expert Card 1 -->
+<article class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm flex flex-col space-y-3.5">
+<div class="flex items-start gap-3">
+<img class="w-14 h-14 rounded-full object-cover shrink-0 shadow-sm" data-alt="Close up professional portrait of Dr Ramesh Patil, an experienced Indian plant pathologist in a field-ready collared shirt holding agricultural notes outdoors, warm natural morning light, realistic photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpPaQqhcM0rD0xCbAcj6OLwL43WTUk9XmfDML_nih6Z6Jea2t_1Jb4oX-WnTkEFRii1F_t2Ebgg74zMorCEbyGy9arbGEoYQUv5dQRCggSzd3-R_xNggVVT3J70JJRrmUid6sMe0_0_2BXQ2AyihPPOx-gDWunGAgTjZpM4UpIE2XgBGLLmkuLD8SrH4BkaRHC-PC0hUEdMOI4p_ADmjzaY20BCTb0fn3KANisUG4"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<h3 class="font-label-lg text-label-lg text-on-surface font-bold truncate">Dr. Ramesh Patil</h3>
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+              Verified ICAR/KVK
+            </span>
+</div>
+<p class="font-label-md text-label-md text-primary font-medium mt-0.5">Tomato Blight &amp; Fungal Diseases</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">15 Years Exp. • KVK Nashik / MPKV Rahuri</p>
+</div>
+</div>
+<div class="bg-surface-container-low/70 rounded-xl px-3 py-2 flex items-center justify-between">
+<div class="flex items-center gap-1 text-on-surface font-label-md text-label-md">
+<span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-bold">4.9</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">(340 reviews)</span>
+</div>
+<div class="flex items-center gap-1 text-primary font-label-sm text-label-sm">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span>Active Now • ~18m reply</span>
+</div>
+</div>
+<button class="w-full h-12 px-4 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-sm" onclick="this.classList.add('bg-primary-container'); setTimeout(() =&gt; this.classList.remove('bg-primary-container'), 200);" type="button">
+<span class="material-symbols-outlined text-[20px]">attach_file_add</span>
+        Request 2nd Opinion
+      </button>
+</article>
+<!-- Expert Card 2 -->
+<article class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm flex flex-col space-y-3.5">
+<div class="flex items-start gap-3">
+<img class="w-14 h-14 rounded-full object-cover shrink-0 shadow-sm" data-alt="Portrait of Dr Sunita Deshmukh, middle aged Indian woman scientist wearing a subtle lab coat over traditional attire, confident warm smile inside a plant research station, soft daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyJ00w0Q1ajpRNc1O5C_2fmrXXT9fbh-akUoF-lHTuiQl47AuBJYe3WUmn4p6keyUOm0vbnWYDEEYcG6TLc2pJ6PUcv3iZ20nUg-fUyiX_QscqJ8jddtJrpRhAAa_toXvFZJRmjzjNxzf5YvA4L2lk9iPSyuWMCjWclSZsRdkZ389rPdsZ6mUmJjcb4oaWkjmJaTse8im7S8CE8szNhSrmKvUrxmP3CvU2tFhXPAc"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<h3 class="font-label-lg text-label-lg text-on-surface font-bold truncate">Dr. Sunita Deshmukh</h3>
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+              Verified ICAR/KVK
+            </span>
+</div>
+<p class="font-label-md text-label-md text-primary font-medium mt-0.5">TYLCV Vector Control &amp; Sucking Pests</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">12 Years Exp. • ICAR-IIVR Sentinel Station</p>
+</div>
+</div>
+<div class="bg-surface-container-low/70 rounded-xl px-3 py-2 flex items-center justify-between">
+<div class="flex items-center gap-1 text-on-surface font-label-md text-label-md">
+<span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-bold">4.8</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">(215 reviews)</span>
+</div>
+<div class="flex items-center gap-1 text-secondary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">phone_in_talk</span>
+<span>Call &amp; Tele-Advisory Ready</span>
+</div>
+</div>
+<button class="w-full h-12 px-4 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-sm" onclick="this.classList.add('bg-primary-container'); setTimeout(() =&gt; this.classList.remove('bg-primary-container'), 200);" type="button">
+<span class="material-symbols-outlined text-[20px]">attach_file_add</span>
+        Request 2nd Opinion
+      </button>
+</article>
+<!-- Expert Card 3 -->
+<article class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm flex flex-col space-y-3.5">
+<div class="flex items-start gap-3">
+<img class="w-14 h-14 rounded-full object-cover shrink-0 shadow-sm" data-alt="Professional headshot of Prof Arvind Shinde, distinguished Indian agronomist and soil microbiologist with glasses inspecting a healthy green soil specimen in agricultural laboratory, authentic documentary style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCpw5d0q_v502cfFWyutlVuGPc7Vv61AUtbPRWecjsiHd8qztTcHJed3fn001VGCfVt-BbP1WHGD-YS37moTB3_5aqNrfGkQTmBoJFYDcdEDdjsjuByAnVpxWSHbPOWgjjSiLKdT_f0S6b3wbDIRh1KaOCNwI73uTCBGCMtnAmWM3USiMUq6WzL55H7X1c7M5U2knyT_sZQT1Bx66sZNfoPuHhy82cSjM0LbeOOz4"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-1.5 flex-wrap">
+<h3 class="font-label-lg text-label-lg text-on-surface font-bold truncate">Prof. Arvind Shinde</h3>
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+              Verified ICAR/KVK
+            </span>
+</div>
+<p class="font-label-md text-label-md text-primary font-medium mt-0.5">Bacterial Wilt &amp; Soil-Borne Pathogens</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">18 Years Exp. • Mahatma Phule Krishi Vidyapeeth</p>
+</div>
+</div>
+<div class="bg-surface-container-low/70 rounded-xl px-3 py-2 flex items-center justify-between">
+<div class="flex items-center gap-1 text-on-surface font-label-md text-label-md">
+<span class="material-symbols-outlined text-primary text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-bold">4.95</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">(410 reviews)</span>
+</div>
+<div class="flex items-center gap-1 text-primary font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>Next slot in 15 mins</span>
+</div>
+</div>
+<button class="w-full h-12 px-4 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-sm" onclick="this.classList.add('bg-primary-container'); setTimeout(() =&gt; this.classList.remove('bg-primary-container'), 200);" type="button">
+<span class="material-symbols-outlined text-[20px]">attach_file_add</span>
+        Request 2nd Opinion
+      </button>
+</article>
+</section>
+<!-- Urgent Helpline & ICAR Compliance Banner -->
+<section class="space-y-3 pt-2">
+<div class="bg-secondary-container/70 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-sm">
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[22px]">phone_forwarded</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-secondary-container font-bold uppercase tracking-wider block">Urgent Outbreak Helpline</span>
+<p class="font-label-md text-label-md text-on-surface font-semibold">Kisan Call Center: 1800-180-1551</p>
+<p class="font-body-sm text-body-sm text-on-secondary-container">Toll-Free • 24/7 Multi-lingual Agronomist Support</p>
+</div>
+</div>
+<a aria-label="Call Kisan Helpline" class="h-10 px-3.5 rounded-xl bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center shrink-0 active:scale-95 transition-transform" href="tel:18001801551">
+        Call
+      </a>
+</div>
+<!-- Assurance Tag -->
+<div class="flex items-center justify-center gap-2 py-2 text-center text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-primary text-[18px]">verified_user</span>
+<span>ICAR-vetted recommendations compliant with SAU IPM package of practices</span>
+</div>
+</section>
+</div>
+<script>
+  // Dynamic filter chip toggling micro-interaction
+  document.querySelectorAll('section:nth-of-type(2) button').forEach(button => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('section:nth-of-type(2) button').forEach(b => {
+        b.className = 'shrink-0 px-4 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md hover:bg-surface-container active:scale-95 transition-all';
+      });
+      button.className = 'shrink-0 px-4 py-2 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-sm active:scale-95 transition-all flex items-center gap-1.5';
+    });
+  });
+</script></main><nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-4px_20px_rgba(33,70,35,0.08)]" data-active-classes="text-primary font-label-md [&amp;_span.material-symbols-outlined]:scale-110 [&amp;_span.material-symbols-outlined]:text-primary [&amp;_.nav-indicator]:opacity-100"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center flex-1 py-1 text-on-surface-variant hover:text-primary transition-all group" data-path="home" href="#"><span class="material-symbols-outlined text-[22px] transition-transform">potted_plant</span><span class="font-label-sm text-label-sm mt-0.5">Home</span><span class="nav-indicator w-1 h-1 rounded-full bg-primary mt-0.5 opacity-0 transition-opacity"></span></a><a class="flex flex-col items-center justify-center flex-1 py-1 text-on-surface-variant hover:text-primary transition-all group" data-path="scan-ai" href="#"><span class="material-symbols-outlined text-[22px] transition-transform">document_scanner</span><span class="font-label-sm text-label-sm mt-0.5">Scan AI</span><span class="nav-indicator w-1 h-1 rounded-full bg-primary mt-0.5 opacity-0 transition-opacity"></span></a><a class="flex flex-col items-center justify-center flex-1 py-1 text-on-surface-variant hover:text-primary transition-all group" data-path="voice" href="#"><span class="material-symbols-outlined text-[22px] transition-transform">mic</span><span class="font-label-sm text-label-sm mt-0.5">Voice</span><span class="nav-indicator w-1 h-1 rounded-full bg-primary mt-0.5 opacity-0 transition-opacity"></span></a><a class="flex flex-col items-center justify-center flex-1 py-1 text-on-surface-variant hover:text-primary transition-all group" data-path="profile-experts" href="#"><span class="material-symbols-outlined text-[22px] transition-transform">psychology_alt</span><span class="font-label-sm text-label-sm mt-0.5">Experts</span><span class="nav-indicator w-1 h-1 rounded-full bg-primary mt-0.5 opacity-0 transition-opacity"></span></a></div></nav></body></html>
