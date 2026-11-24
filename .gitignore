@@ -1,5 +1,5 @@
 # ==============================================================================
-# FloraX / LeafGuard — Enterprise Production .gitignore
+# KisanSetu — Enterprise Production .gitignore
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -19,7 +19,16 @@ android/key.properties
 *.p12
 
 # ------------------------------------------------------------------------------
-# 2. PYTHON VIRTUAL ENVIRONMENTS, COMPILED BYTECODE & ML SCRATCHPADS
+# 2. RELEASE BINARIES & GIT 100 MB SAFETY (DISTRIBUTED VIA GITHUB RELEASES)
+# ------------------------------------------------------------------------------
+*.apk
+*.aab
+*.apks
+releases/
+*/releases/
+
+# ------------------------------------------------------------------------------
+# 3. PYTHON VIRTUAL ENVIRONMENTS, COMPILED BYTECODE & ML SCRATCHPADS
 # ------------------------------------------------------------------------------
 venv/
 .venv/
@@ -42,7 +51,7 @@ data_pipeline/raw_datasets/
 data_pipeline/sample_calibration_dataset/
 
 # ------------------------------------------------------------------------------
-# 3. FLUTTER / DART ENGINE & BUILD ARTIFACTS
+# 4. FLUTTER / DART ENGINE & BUILD ARTIFACTS
 # ------------------------------------------------------------------------------
 .dart_tool/
 .flutter-plugins
@@ -54,7 +63,7 @@ build/
 */build/
 
 # ------------------------------------------------------------------------------
-# 4. ANDROID TOOLCHAIN & BUILD CACHES (GRADLE WRAPPER PRESERVED)
+# 5. ANDROID TOOLCHAIN & BUILD CACHES (GRADLE WRAPPER PRESERVED)
 # ------------------------------------------------------------------------------
 .gradle/
 */.gradle/
@@ -64,7 +73,7 @@ android/captures/
 **/GeneratedPluginRegistrant.java
 
 # ------------------------------------------------------------------------------
-# 5. NODE.JS & WEB BUILD CACHES
+# 6. NODE.JS & WEB BUILD CACHES
 # ------------------------------------------------------------------------------
 node_modules/
 .next/
@@ -73,7 +82,7 @@ dist/
 out/
 
 # ------------------------------------------------------------------------------
-# 6. IDE, EDITORS & LOGS
+# 7. IDE, EDITORS & LOGS
 # ------------------------------------------------------------------------------
 .idea/
 .agent/
@@ -93,18 +102,17 @@ Thumbs.db
 .DS_Store
 
 # ------------------------------------------------------------------------------
-# 7. DESIGN MOCKUPS & INTERMEDIATE ARTIFACTS
+# 8. DESIGN MOCKUPS & INTERMEDIATE ARTIFACTS
 # ------------------------------------------------------------------------------
 stitch_designs/
+_stitch_incoming/
 
 # ------------------------------------------------------------------------------
-# 8. EXPLICIT PRODUCTION MODEL WEIGHTS WHITELIST (< 10 MB EACH)
+# 9. EXPLICIT PRODUCTION MODEL WEIGHTS WHITELIST (< 25 MB EACH)
 # ------------------------------------------------------------------------------
-!assets/models/florax_disease_v1_drq.tflite
+!assets/models/florax_v2_45c_fp16.tflite
 !assets/models/labels.txt
-!assets/models/class_alias_map.json
 !assets/models/model_meta.json
-!backend_vision/weights/florax_disease_v1_gradcam.keras
+!backend_vision/weights/florax_v2_45c_gradcam.keras
 !backend_vision/weights/labels.txt
-!backend_vision/weights/class_alias_map.json
 !backend_vision/weights/model_meta.json
