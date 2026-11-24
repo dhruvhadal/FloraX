@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 240" width="1200" height="240" role="img" aria-label="KisanSetu — AI-Powered Crop Health and Agronomist Bridge">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D3B1E" />
+      <stop offset="55%" stop-color="#155724" />
+      <stop offset="100%" stop-color="#2E7D32" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="50%" stop-color="#FBBF24" />
+      <stop offset="100%" stop-color="#FDE68A" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B6B31" />
+      <stop offset="100%" stop-color="#0B2E17" />
+    </linearGradient>
+    <linearGradient id="waveGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4ADE80" stop-opacity="0.16" />
+      <stop offset="50%" stop-color="#86EFAC" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#4ADE80" stop-opacity="0.14" />
+    </linearGradient>
+    <linearGradient id="waveGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FBBF24" stop-opacity="0.18" />
+      <stop offset="50%" stop-color="#4ADE80" stop-opacity="0.26" />
+      <stop offset="100%" stop-color="#FBBF24" stop-opacity="0.15" />
+    </linearGradient>
+    <clipPath id="cardClip">
+      <rect x="0" y="0" width="1200" height="240" rx="18" ry="18" />
+    </clipPath>
+    <style>
+      .wordmark {
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-weight: 800;
+        font-size: 56px;
+        fill: #FFFFFF;
+        letter-spacing: -0.8px;
+      }
+      .subtitle {
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-weight: 500;
+        font-size: 21px;
+        fill: #DCFCE7;
+        letter-spacing: 0.2px;
+      }
+      .pill-text {
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-weight: 700;
+        font-size: 13.5px;
+        fill: #FEF3C7;
+        letter-spacing: 0.5px;
+      }
+      .wave-slow {
+        animation: waveSlideSlow 14s ease-in-out infinite alternate;
+      }
+      .wave-fast {
+        animation: waveSlideFast 9s ease-in-out infinite alternate;
+      }
+      .emblem-pulse {
+        animation: emblemGlow 4s ease-in-out infinite;
+        transform-origin: 140px 108px;
+      }
+      .accent-line {
+        animation: shimmerLine 6s ease-in-out infinite alternate;
+      }
+      @keyframes waveSlideSlow {
+        0% { transform: translateX(0px); }
+        100% { transform: translateX(-90px); }
+      }
+      @keyframes waveSlideFast {
+        0% { transform: translateX(-80px); }
+        100% { transform: translateX(10px); }
+      }
+      @keyframes emblemGlow {
+        0%, 100% { opacity: 0.96; }
+        50% { opacity: 1; }
+      }
+      @keyframes shimmerLine {
+        0% { opacity: 0.72; }
+        100% { opacity: 1; }
+      }
+    </style>
+  </defs>
+
+  <g clip-path="url(#cardClip)">
+    <!-- Base Gradient -->
+    <rect x="0" y="0" width="1200" height="240" fill="url(#bgGrad)" />
+
+    <!-- Subtle Geometric Foliage Grid Circles -->
+    <circle cx="1070" cy="48" r="145" fill="#4ADE80" fill-opacity="0.06" />
+    <circle cx="1130" cy="110" r="95" fill="#FBBF24" fill-opacity="0.06" />
+    <circle cx="140" cy="108" r="88" fill="#4ADE80" fill-opacity="0.08" />
+
+    <!-- Top Harvest Gold Accent Bar -->
+    <rect class="accent-line" x="0" y="0" width="1200" height="4" fill="url(#goldGrad)" />
+
+    <!-- Animated Bottom Wave Layers -->
+    <g class="wave-slow">
+      <path d="M-40,185 C160,152 340,214 560,184 C780,154 960,210 1260,178 L1260,245 L-40,245 Z" fill="url(#waveGrad1)" />
+    </g>
+    <g class="wave-fast">
+      <path d="M-40,198 C200,224 410,168 640,198 C870,228 1050,176 1280,204 L1280,245 L-40,245 Z" fill="url(#waveGrad2)" />
+    </g>
+    <path d="M0,212 Q300,192 600,210 T1200,202" fill="none" stroke="url(#goldGrad)" stroke-width="2" stroke-opacity="0.6" />
+
+    <!-- Vector Shield-Leaf-Checkmark Emblem -->
+    <g class="emblem-pulse" transform="translate(76, 44)">
+      <!-- Outer Gold Rim Shield -->
+      <path d="M64,4 L122,26 L122,68 C122,102 96,125 64,136 C32,125 6,102 6,68 L6,26 Z" fill="url(#shieldGrad)" stroke="url(#goldGrad)" stroke-width="3.2" />
+      <!-- Stylized Botanical Leaf -->
+      <path d="M64,28 C84,32 95,49 92,70 C89,89 75,102 64,106 C53,102 39,89 36,70 C33,49 44,32 64,28 Z" fill="#2E7D32" stroke="#86EFAC" stroke-width="1.8" />
+      <path d="M64,34 L64,104" stroke="#BBF7D0" stroke-width="1.8" stroke-linecap="round" opacity="0.7" />
+      <path d="M64,56 L79,47 M64,72 L81,62 M64,62 L48,53 M64,78 L47,68" stroke="#BBF7D0" stroke-width="1.5" stroke-linecap="round" opacity="0.6" />
+      <!-- Clinical Verification Checkmark Badge -->
+      <circle cx="96" cy="98" r="19" fill="#0D3B1E" stroke="#FBBF24" stroke-width="2.6" />
+      <path d="M87,98 L93.5,104.5 L106,91.5" fill="none" stroke="#FBBF24" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+    </g>
+
+    <!-- Brand Wordmark & Subtitle -->
+    <g transform="translate(238, 0)">
+      <!-- Hackathon Pill Tag -->
+      <rect x="0" y="34" width="388" height="28" rx="14" ry="14" fill="#092914" fill-opacity="0.78" stroke="#FBBF24" stroke-width="1.2" stroke-opacity="0.85" />
+      <circle cx="17" cy="48" r="4" fill="#4ADE80" />
+      <text x="29" y="52.5" class="pill-text">Srujan 2026 × L&amp;T EduTech  •  Track T1 | AI-05</text>
+
+      <!-- Main Wordmark -->
+      <text x="0" y="122" class="wordmark">KisanSetu</text>
+
+      <!-- Harvest Gold Divider Accent -->
+      <rect x="2" y="135" width="92" height="3.5" rx="2" fill="url(#goldGrad)" />
+
+      <!-- Subtitle -->
+      <text x="0" y="168" class="subtitle">AI-Powered Crop Health &amp; Agronomist Bridge</text>
+    </g>
+
+    <!-- Right-side Minimal Telemetry Pill -->
+    <g transform="translate(944, 52)">
+      <rect x="0" y="0" width="204" height="82" rx="12" ry="12" fill="#092914" fill-opacity="0.58" stroke="#4ADE80" stroke-width="1" stroke-opacity="0.4" />
+      <text x="18" y="27" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="11.5" font-weight="700" fill="#FBBF24" letter-spacing="0.6">OFFLINE EDGE LITERT</text>
+      <text x="18" y="49" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="16" font-weight="800" fill="#FFFFFF">45 Classes • FP16</text>
+      <text x="18" y="68" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="12" font-weight="500" fill="#BBF7D0">Grad-CAM + ICAR 4-State</text>
+    </g>
+  </g>
+</svg>

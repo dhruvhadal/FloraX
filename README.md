@@ -1,16 +1,12 @@
 <div align="center">
 
-<!-- Animated Top Wave Header -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:155724,100:4CAF50&height=190&section=header&text=KisanSetu&fontSize=54&fontColor=ffffff&fontAlignY=38&desc=AI-Powered%20Crop%20Health%20%26%20Agronomist%20Bridge&descSize=18&descAlignY=64&animation=fadeIn" width="100%" alt="KisanSetu Header Banner" />
-
-<br />
-
-<img src="docs/assets/kisansetu_banner.jpg" alt="KisanSetu Emblem" width="120" style="border-radius: 16px;" />
+<!-- Self-Hosted Animated SVG Header -->
+<img src="./docs/assets/kisansetu_header.svg" alt="KisanSetu Header Banner" width="100%" />
 
 <br /><br />
 
 <!-- Animated Typing Subtitle -->
-<img src="https://readme-typing-svg.demolab.com?font=Plus+Jakarta+Sans&weight=700&size=21&duration=3200&pause=900&color=155724&center=true&vCenter=true&multiline=false&width=760&height=42&lines=45-Class+Offline+Edge+AI+Crop+Diagnostics;100%25+Non-Leaf+OOD+Rejection+%2B+Grad-CAM+XAI;ICAR%2FSAU+Approved+Advisory+%2B+4-State+Safety+Locks;Srujan+2026+x+L%26T+EduTech+%7C+Track+T1+-+AI-05" alt="KisanSetu Capabilities Typing Banner" />
+<img src="https://readme-typing-svg.demolab.com?font=Plus+Jakarta+Sans&weight=700&size=20&duration=3200&pause=900&color=4ADE80&center=true&vCenter=true&multiline=false&width=760&height=42&lines=45-Class+Offline+Edge+AI+Crop+Diagnostics;100%25+Non-Leaf+OOD+Rejection+%2B+Grad-CAM+XAI;ICAR%2FSAU+Approved+Advisory+%2B+4-State+Safety+Locks;Srujan+2026+x+L%26T+EduTech+%7C+Track+T1+-+AI-05" alt="KisanSetu Capabilities Typing Banner" />
 
 <br />
 
@@ -81,7 +77,7 @@ flowchart TD
 
 ---
 
-## 3. Core Features & Visual App Showcase
+## 3. Core Capabilities & Production Features
 
 | Capability | Verified Implementation Details |
 |---|---|
@@ -93,56 +89,6 @@ flowchart TD
 | **Regional Outbreak Radar** | `OutbreakRadarRepository` + `flutter_map` renders live Firestore `regional_outbreaks` and GeoHash5 clusters with Haversine proximity filtering (`calculateDistanceKm`) and seeded ICAR fallback alerts. |
 | **Agri Experts (KVK Tele-Agronomy)** | `ExpertDirectoryRepository` connects farmers to accredited scientists across 5 disciplines (`plant_pathologist`, `botanist`, `agronomist`, `entomologist`, `horticulturist`) with scan-attached second-opinion consultations. |
 | **Read-Only Govt Schemes & NGO Support** | `AssistanceRepository` presents verified schemes (`PM-KISAN`, `PMFBY`, `NFSM`, `SMAM`, `SDRF`, `KVK Soil Health Card`) as **strictly read-only informational cards** (`isInformationalOnly: true`, guarded by `UnsupportedError`), while enabling active **NGO Support** requests to verified partners (`BAIF`, `Dilasa Janvikas Pratishthan`, `Swades Foundation`, `Yuva Mitra`). |
-
-### App Screenshot & Grad-CAM Verification Gallery
-
-> [!NOTE]
-> Placeholder previews below mark exact drop-in paths inside [`docs/assets/screenshots/`](docs/assets/screenshots/). Replace each placeholder by dropping the matching PNG/JPG file into `docs/assets/screenshots/`.
-
-<table align="center">
-  <tr>
-    <td align="center" width="33%">
-      <img src="https://placehold.co/360x720/F2FCEE/155724?text=01_language_auth.png%0A(Drop+Screenshot+Here)" alt="Trilingual First-Launch and +91 Auth Gate" width="220" /><br />
-      <b>1. Trilingual Gate &amp; +91 Auth</b><br />
-      <sub><code>docs/assets/screenshots/01_language_auth.png</code></sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="https://placehold.co/360x720/F2FCEE/155724?text=02_home_dashboard.png%0A(Drop+Screenshot+Here)" alt="Home Dashboard and 3-Tier GPS" width="220" /><br />
-      <b>2. Farmer Dashboard &amp; GPS</b><br />
-      <sub><code>docs/assets/screenshots/02_home_dashboard.png</code></sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="https://placehold.co/360x720/F2FCEE/155724?text=03_offline_scanner.png%0A(Drop+Screenshot+Here)" alt="Offline 45-Class Edge AI Scanner" width="220" /><br />
-      <b>3. Offline 45-Class Scanner</b><br />
-      <sub><code>docs/assets/screenshots/03_offline_scanner.png</code></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="33%">
-      <img src="https://placehold.co/360x720/F2FCEE/155724?text=04_gradcam_xai.png%0A(Drop+Screenshot+Here)" alt="Diagnosis Details and Grad-CAM Thermal Overlay" width="220" /><br />
-      <b>4. Grad-CAM XAI &amp; 3-Tier IPM</b><br />
-      <sub><code>docs/assets/screenshots/04_gradcam_xai.png</code></sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="https://placehold.co/360x720/F2FCEE/155724?text=05_safety_lock_crops.png%0A(Drop+Screenshot+Here)" alt="Clinical Safety Lock and My Crops Diary" width="220" /><br />
-      <b>5. Safety Lock &amp; My Crops Diary</b><br />
-      <sub><code>docs/assets/screenshots/05_safety_lock_crops.png</code></sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="https://placehold.co/360x720/F2FCEE/155724?text=06_radar_experts_ngo.png%0A(Drop+Screenshot+Here)" alt="Outbreak Radar, Agri Experts and NGO Support" width="220" /><br />
-      <b>6. Outbreak Radar, Experts &amp; NGO</b><br />
-      <sub><code>docs/assets/screenshots/06_radar_experts_ngo.png</code></sub>
-    </td>
-  </tr>
-</table>
-
-**Drop-in Screenshot Filenames (`docs/assets/screenshots/`):**
-- `01_language_auth.png` — First-launch `EN | हिन्दी | मराठी` selector & `+91` login/registration gate
-- `02_home_dashboard.png` — Farmer Dashboard with live 3-tier GPS district telemetry & quick actions
-- `03_offline_scanner.png` — Camera viewfinder with offline 45-class Edge LiteRT scan flow
-- `04_gradcam_xai.png` — Diagnosis screen showing JET Grad-CAM heatmap overlay, CIELAB lesion ratio & Scientist Drawer
-- `05_safety_lock_crops.png` — Abiotic / `< 75%` chemical safety lock + scan-driven My Crops Field Diary
-- `06_radar_experts_ngo.png` — GeoHash5 Outbreak Radar, KVK Agri Experts, Read-Only Govt Schemes & NGO Support
 
 ---
 
@@ -238,8 +184,9 @@ KisanSetu/
 │   ├── KisanSetu_Technical_Note.md          # 1-page technical summary
 │   ├── KisanSetu_Technical_Note_1Page.pdf   # Formatted judging PDF
 │   └── assets/
-│       ├── kisansetu_banner.jpg             # GitHub README emblem asset
-│       └── screenshots/                     # App & Grad-CAM showcase screenshots
+│       ├── kisansetu_header.svg             # Self-hosted animated SVG hero banner
+│       ├── kisansetu_footer.svg             # Self-hosted animated SVG footer wave
+│       └── kisansetu_banner.jpg             # KisanSetu emblem asset
 ├── lib/
 │   ├── core/                                # Config, theme, localization, router, logging
 │   ├── data/repositories/                   # Offline-first Firestore + SharedPreferences repositories
@@ -304,12 +251,12 @@ flutter test
 
 <div align="center">
 
-<!-- Animated Footer Banner -->
+<!-- Self-Hosted Animated SVG Footer Banner -->
 <p>
   <strong>Built for Srujan 2026 &times; L&amp;T EduTech — Track T1: Artificial Intelligence (Problem AI-05)</strong><br />
   <sub>KisanSetu Engineering Team &bull; Institutionally Aligned with ICAR &amp; State Agricultural University (SAU) IPM Protocols</sub>
 </p>
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:155724,100:4CAF50&height=110&section=footer" width="100%" alt="KisanSetu Footer Wave" />
+<img src="./docs/assets/kisansetu_footer.svg" alt="KisanSetu Footer Banner" width="100%" />
 
 </div>
