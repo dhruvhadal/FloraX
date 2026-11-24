@@ -240,7 +240,7 @@ class PredictiveWeatherService {
       }
       return geoHash5;
     } catch (e) {
-      debugPrint('[FloraX Weather] Failed to resolve GeoHash5 ($e). Using default Nashik hash.');
+      debugPrint('[FloraX Weather] Failed to resolve GeoHash5 ($e). Using default corridor hash.');
       const defaultHash = fallbackGeoHash5;
       _cachedGeoHash5 = defaultHash;
       _outbreakFcmService?.subscribeToOutbreakTopic(defaultHash);
@@ -252,7 +252,12 @@ class PredictiveWeatherService {
   /// risk scores, and caches results to Firestore SQLite for offline field survival.
   Future<WeatherRiskReport> getPredictiveDiseaseWarning() async {
     // 1. Acquire Coordinates with Permission Handling
-    final Position position = await _determinePosition();
+    Position position;
+    try {
+      position = await _determinePosition();
+    } catch (_) {
+      return _buildDefaultFallbackReport(_cachedGeoHash5);
+    }
     final double lat = position.latitude;
     final double lng = position.longitude;
 
@@ -476,53 +481,25 @@ class PredictiveWeatherService {
   Future<Position> _determinePosition() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Default to agricultural heartland of Maharashtra (Nashik: 19.9975, 73.7898)
-      return Position(
-        longitude: 73.7898,
-        latitude: 19.9975,
-        timestamp: DateTime.now(),
-        accuracy: 100.0,
-        altitude: 600.0,
-        altitudeAccuracy: 10.0,
-        heading: 0.0,
-        headingAccuracy: 0.0,
-        speed: 0.0,
-        speedAccuracy: 0.0,
-      );
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) return lastKnown;
+      throw StateError('Location service (GPS) is disabled.');
     }
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        return Position(
-          longitude: 73.7898,
-          latitude: 19.9975,
-          timestamp: DateTime.now(),
-          accuracy: 100.0,
-          altitude: 600.0,
-          altitudeAccuracy: 10.0,
-          heading: 0.0,
-          headingAccuracy: 0.0,
-          speed: 0.0,
-          speedAccuracy: 0.0,
-        );
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null) return lastKnown;
+        throw StateError('Location permission denied.');
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      return Position(
-        longitude: 73.7898,
-        latitude: 19.9975,
-        timestamp: DateTime.now(),
-        accuracy: 100.0,
-        altitude: 600.0,
-        altitudeAccuracy: 10.0,
-        heading: 0.0,
-        headingAccuracy: 0.0,
-        speed: 0.0,
-        speedAccuracy: 0.0,
-      );
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) return lastKnown;
+      throw StateError('Location permission denied forever.');
     }
 
     try {
@@ -531,18 +508,9 @@ class PredictiveWeatherService {
         timeLimit: const Duration(seconds: 4),
       );
     } catch (_) {
-      return Position(
-        longitude: 73.7898,
-        latitude: 19.9975,
-        timestamp: DateTime.now(),
-        accuracy: 100.0,
-        altitude: 600.0,
-        altitudeAccuracy: 10.0,
-        heading: 0.0,
-        headingAccuracy: 0.0,
-        speed: 0.0,
-        speedAccuracy: 0.0,
-      );
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) return lastKnown;
+      throw StateError('Unable to acquire GPS position.');
     }
   }
 

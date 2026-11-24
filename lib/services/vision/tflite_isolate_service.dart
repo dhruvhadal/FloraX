@@ -8,6 +8,7 @@ import 'package:image/image.dart' as img;
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 import '../../core/config/app_config.dart';
+import '../../core/logging/app_activity_logger.dart';
 import '../../domain/models/florax_models.dart';
 import 'isolate_lesion_analyzer.dart';
 
@@ -29,13 +30,28 @@ class TfliteInferenceResult {
   /// Optional model inference error description (null when successful)
   final String? inferenceError;
 
-  const TfliteInferenceResult({
+  /// Deterministic 4-state clinical diagnosis decision
+  final ClinicalDiagnosisDecision decision;
+
+  /// Normalized Shannon entropy (0.0 to 1.0)
+  final double normalizedEntropy;
+
+  TfliteInferenceResult({
     required this.topPredictions,
     required this.requiresKvkReview,
     required this.verificationStatus,
     required this.inferenceDurationMs,
     this.inferenceError,
-  });
+    ClinicalDiagnosisDecision? decision,
+    this.normalizedEntropy = 0.0,
+  }) : decision = decision ??
+            ClinicalDiagnosisDecision.evaluate(
+              canonicalId:
+                  topPredictions.isNotEmpty ? topPredictions.first.labelId : 'unknown',
+              top1Confidence:
+                  topPredictions.isNotEmpty ? topPredictions.first.confidence : 0.0,
+              normalizedEntropy: normalizedEntropy,
+            );
 }
 
 /// Principal Dynamic Metadata-Driven EdgeLiteRT / TFLite Inference Service
@@ -133,9 +149,11 @@ class TfliteIsolateService {
             .map((line) => line.trim())
             .where((line) => line.isNotEmpty)
             .toList();
-        if (_labels.isNotEmpty) {
-          _numClasses = _labels.length;
+        assert(_labels.length == 45, 'labels.txt must contain exactly 45 classes, found ${_labels.length}');
+        if (_labels.length != 45) {
+          throw StateError('Invalid labels.txt class count: ${_labels.length} (expected 45)');
         }
+        _numClasses = _labels.length;
         debugPrint('[FloraX TFLite] Loaded ${_labels.length} canonical labels from ${AppConfig.labelsAssetPath}');
       } catch (labelErr, labelStack) {
         _lastInferenceError = 'Labels load failed: $labelErr';
@@ -164,18 +182,42 @@ class TfliteIsolateService {
         '[FloraX TFLite] Successfully instantiated Interpreter.fromBuffer (${modelBytes.length} bytes, address=${_interpreter?.address})',
       );
 
-      // Verify tensor contract
+      // Verify tensor contract strictly
       try {
         final inTensor = _interpreter!.getInputTensor(0);
         final outTensor = _interpreter!.getOutputTensor(0);
+        final inShape = inTensor.shape;
+        final outShape = outTensor.shape;
         debugPrint(
-          '[FloraX TFLite] Verified Tensor Contract: In=${inTensor.shape} (${inTensor.type}) -> Out=${outTensor.shape} (${outTensor.type})',
+          '[FloraX TFLite] Verified Tensor Contract: In=$inShape (${inTensor.type}) -> Out=$outShape (${outTensor.type})',
         );
+
+        assert(
+          inShape.length == 4 && inShape[0] == 1 && inShape[1] == inShape[2] && inShape[3] == 3,
+          'Input tensor shape must be [1, H, W, 3] with H == W, found $inShape',
+        );
+        assert(
+          outShape.length == 2 && outShape[0] == 1 && outShape[1] == 45,
+          'Output tensor shape must be [1, 45], found $outShape',
+        );
+        if (inShape.length != 4 || inShape[0] != 1 || inShape[1] != inShape[2] || inShape[3] != 3) {
+          throw StateError('Input tensor contract mismatch: expected [1, H, W, 3], got $inShape');
+        }
+        if (outShape.length != 2 || outShape[0] != 1 || outShape[1] != 45) {
+          throw StateError('Output tensor contract mismatch: expected [1, 45], got $outShape');
+        }
+        _inputShape = inShape;
+        _inputHeight = inShape[1];
+        _inputWidth = inShape[2];
+        _inputChannels = inShape[3];
+        _numClasses = outShape[1];
       } catch (tErr) {
-        debugPrint('[FloraX TFLite] Note verifying tensor shapes: $tErr');
+        _lastInferenceError = 'Tensor validation failed: $tErr';
+        debugPrint('[FloraX TFLite ERROR] Tensor validation failed: $tErr');
+        rethrow;
       }
 
-      // 5. Optionally spawn IsolateInterpreter from address on main isolate
+      // 5. Spawn background IsolateInterpreter from address on main isolate
       try {
         _isolateInterpreter = await IsolateInterpreter.create(
           address: _interpreter!.address,
@@ -227,20 +269,27 @@ class TfliteIsolateService {
     final outputOriginal = List.generate(1, (_) => List<double>.filled(classesCount, 0.0));
     final outputFlipped = List.generate(1, (_) => List<double>.filled(classesCount, 0.0));
 
-    // 3. Execute inference for both views
+    // 3. Execute inference for both views (prioritize background IsolateInterpreter to prevent UI freeze)
     try {
-      if (_interpreter != null) {
-        _interpreter!.run(inputOriginal, outputOriginal);
-        _interpreter!.run(inputFlipped, outputFlipped);
-      } else if (_isolateInterpreter != null) {
+      if (_isolateInterpreter != null) {
         await _isolateInterpreter!.run(inputOriginal, outputOriginal);
         await _isolateInterpreter!.run(inputFlipped, outputFlipped);
+      } else if (_interpreter != null) {
+        _interpreter!.run(inputOriginal, outputOriginal);
+        _interpreter!.run(inputFlipped, outputFlipped);
       } else {
         throw StateError('Interpreter is null despite initialization');
       }
     } catch (infErr, infStack) {
       _lastInferenceError = 'Interpreter execution failed: $infErr';
       debugPrint('[FloraX TFLite ERROR] Interpreter execution failed: $infErr\n$infStack');
+      AppActivityLogger.instance.log(
+        screen: 'tflite_isolate_service',
+        action: 'tflite_inference',
+        backendTarget: _isolateInterpreter != null ? 'TFLite.IsolateInterpreter' : 'TFLite.Interpreter',
+        status: 'FAILED',
+        details: {'error': infErr.toString()},
+      );
       rethrow;
     }
 
@@ -250,7 +299,21 @@ class TfliteIsolateService {
       (i) => (outputOriginal[0][i] + outputFlipped[0][i]) / 2.0,
     );
 
-    final double sumProbs = avgProbs.fold(0.0, (acc, p) => acc + p);
+    // Strict probability validation: assert length == 45, no NaN/Infinity, sum > 0.90
+    if (avgProbs.length != 45) {
+      final msg = 'Model output class count mismatch: ${avgProbs.length} (expected 45)';
+      _lastInferenceError = msg;
+      throw StateError(msg);
+    }
+    for (int i = 0; i < avgProbs.length; i++) {
+      if (avgProbs[i].isNaN || avgProbs[i].isInfinite) {
+        final msg = 'Model output contains NaN/Infinity at class index $i';
+        _lastInferenceError = msg;
+        throw StateError(msg);
+      }
+    }
+
+    final double sumProbs = avgProbs.reduce((a, b) => a + b);
 
     // Assert probability distribution integrity (> 0.90)
     // Never swallow exceptions into flat zeros
@@ -275,10 +338,6 @@ class TfliteIsolateService {
         : 'class_$maxIndex';
     final double top1Pct = maxScore * 100.0;
 
-    debugPrint(
-      '[TFLite] Model=$_modelVersion Input=$_inputShape top1=$top1Label (${top1Pct.toStringAsFixed(2)}%) sum=${sumProbs.toStringAsFixed(4)}',
-    );
-
     // Clear prior inference error on success
     _lastInferenceError = null;
 
@@ -299,6 +358,27 @@ class TfliteIsolateService {
       }
     }
     final double normalizedEntropy = lnK > 0 ? (shannonEntropy / lnK) : 0.0;
+
+    // Explicit Logging format specified in requirement
+    debugPrint(
+      '[TFLite] model=$_modelVersion tensor=[1,$_inputHeight,$_inputWidth,3] top1=$top1Label (${top1Pct.toStringAsFixed(2)}%) entropy=${normalizedEntropy.toStringAsFixed(4)} sum=${sumProbs.toStringAsFixed(4)} ms=${stopwatch.elapsedMilliseconds}',
+    );
+
+    AppActivityLogger.instance.log(
+      screen: 'camera_scan_interface',
+      action: 'tflite_inference',
+      backendTarget: _isolateInterpreter != null ? 'TFLite.IsolateInterpreter' : 'TFLite.Interpreter',
+      status: 'SUCCESS',
+      details: {
+        'model': _modelVersion,
+        'tensor': '[1,$_inputHeight,$_inputWidth,3]',
+        'top1': top1Label,
+        'confidence': top1Pct / 100.0,
+        'entropy': normalizedEntropy,
+        'sum': sumProbs,
+        'elapsedMs': stopwatch.elapsedMilliseconds,
+      },
+    );
 
     // 8. Sort classes descending by probability
     final List<MapEntry<String, double>> sortedCanonical = canonicalDistribution.entries.toList()
@@ -337,12 +417,20 @@ class TfliteIsolateService {
 
     stopwatch.stop();
 
-    // 10. Safety Guardrail: Flag KVK expert review if top candidate confidence is < 75% or OOD
-    final double topConfidence = top3.isNotEmpty ? top3.first.confidence : 0.0;
-    final bool requiresKvkReview = isOod ||
-        topConfidence < _clinicalChemicalLockThreshold ||
-        (top3.isNotEmpty && top3.first.labelId == 'not_a_leaf_background');
+    // 10. Deterministic 4-state ClinicalDiagnosisDecision Evaluator
+    final String top1Canonical = top3.isNotEmpty ? top3.first.labelId : top1Label;
+    final double top1Conf = top3.isNotEmpty ? top3.first.confidence : top1Pct / 100.0;
 
+    final decision = ClinicalDiagnosisDecision.evaluate(
+      canonicalId: top1Canonical,
+      top1Confidence: top1Conf,
+      normalizedEntropy: normalizedEntropy,
+      oodMinConfidence: _oodMinConfidence,
+      oodMaxEntropy: _oodMaxNormalizedEntropy,
+      clinicalLockThreshold: _clinicalChemicalLockThreshold,
+    );
+
+    final bool requiresKvkReview = decision.routesToKvkExpert;
     final VerificationStatus verificationStatus = requiresKvkReview
         ? VerificationStatus.pendingKvkReview
         : VerificationStatus.aiVerified;
@@ -352,6 +440,8 @@ class TfliteIsolateService {
       requiresKvkReview: requiresKvkReview,
       verificationStatus: verificationStatus,
       inferenceDurationMs: stopwatch.elapsedMilliseconds,
+      decision: decision,
+      normalizedEntropy: normalizedEntropy,
     );
   }
 
@@ -492,23 +582,20 @@ class TfliteIsolateService {
       throw const FormatException('Failed to decode image bytes for TFLite inference.');
     }
 
-    // View 1: Original resized
+    // 1. Bake camera EXIF orientation (CRITICAL for Android camera portrait rotation)
+    final img.Image oriented = img.bakeOrientation(decoded);
+
+    // View 1: Original resized to (width, height)
     final img.Image resizedOrig = img.copyResize(
-      decoded,
+      oriented,
       width: width,
       height: height,
       interpolation: img.Interpolation.linear,
     );
     final tensorOrig = _build4DTensor(resizedOrig, width, height);
 
-    // View 2: Horizontal flip resized
-    final img.Image flipped = img.flipHorizontal(decoded);
-    final img.Image resizedFlipped = img.copyResize(
-      flipped,
-      width: width,
-      height: height,
-      interpolation: img.Interpolation.linear,
-    );
+    // View 2: Horizontal flip resized to (width, height)
+    final img.Image resizedFlipped = img.flipHorizontal(resizedOrig);
     final tensorFlipped = _build4DTensor(resizedFlipped, width, height);
 
     return _TtaPair(tensorOrig, tensorFlipped);

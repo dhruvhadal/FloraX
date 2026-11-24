@@ -1,5 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.florax.crophealth">
+
+    <!-- Explicitly block RECORD_AUDIO from any transitive plugin library -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
 
     <!-- Core Connectivity & Telemetry Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -9,8 +13,7 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FLASHLIGHT" />
 
-    <!-- Voice Diagnostic Assistant (Kisan Vani STT/TTS) Permissions -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Audio Settings -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <!-- Agronomic Spatial Telemetry (Outbreak Cluster Mapping) -->
@@ -29,14 +32,11 @@
         android:name="android.hardware.camera.autofocus"
         android:required="false" />
     <uses-feature
-        android:name="android.hardware.microphone"
-        android:required="false" />
-    <uses-feature
         android:name="android.hardware.location.gps"
         android:required="false" />
 
     <application
-        android:label="FloraX"
+        android:label="KisanSetu"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:hardwareAccelerated="true"

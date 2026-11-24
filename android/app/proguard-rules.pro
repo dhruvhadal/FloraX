@@ -22,13 +22,20 @@
 -keepclasseswithmembers class * {
     native <methods>;
 }
+-keepclassmembers class * {
+    native <methods>;
+}
 
 # ------------------------------------------------------------------------------
-# 2. TENSORFLOW LITE & GPU / NNAPI ACCELERATION DELEGATES
+# 2. TENSORFLOW LITE & GOOGLE AI EDGE LITERT DELEGATES
 # ------------------------------------------------------------------------------
 -keep class org.tensorflow.lite.** { *; }
 -keep interface org.tensorflow.lite.** { *; }
 -dontwarn org.tensorflow.lite.**
+
+-keep class com.google.ai.edge.litert.** { *; }
+-keep interface com.google.ai.edge.litert.** { *; }
+-dontwarn com.google.ai.edge.litert.**
 
 # TFLite C/C++ JNI Runtime
 -keep class com.tflite.** { *; }

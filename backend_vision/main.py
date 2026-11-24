@@ -1,8 +1,10 @@
 import base64
+import datetime
 import io
 import json
 import math
 import os
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
@@ -26,6 +28,39 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+LOGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
+os.makedirs(LOGS_DIR, exist_ok=True)
+RUNTIME_LOG_FILE = os.path.join(LOGS_DIR, "backend_vision_runtime.log")
+
+
+def log_backend_activity(
+    endpoint: str,
+    model_version: str,
+    input_dims: list,
+    top1_class: str,
+    confidence: float,
+    latency_ms: float,
+    status_code: int = 200,
+    extra: dict = None,
+):
+    """Appends structured JSON log line to logs/backend_vision_runtime.log"""
+    try:
+        record = {
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "endpoint": endpoint,
+            "modelVersion": model_version,
+            "inputDimensions": input_dims,
+            "top1Class": top1_class,
+            "confidence": round(float(confidence), 4),
+            "gradcamLatencyMs": round(float(latency_ms), 2),
+            "statusCode": status_code,
+            "extra": extra or {},
+        }
+        with open(RUNTIME_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record) + "\n")
+    except Exception as e:
+        print(f"[Logging Warning] Failed to write backend runtime log: {e}")
 
 # Canonical Taxonomy Registry across 45 canonical classes
 CANONICAL_TAXONOMY: Dict[str, Dict[str, Any]] = {
@@ -793,7 +828,8 @@ def extract_svg_hotspots_and_overlay(
 
 @app.get("/health")
 def health_check():
-    return {
+    t0 = time.perf_counter()
+    res = {
         "status": "online",
         "service": "FloraX TensorFlow/Keras Grad-CAM Engine",
         "device": "GPU" if tf.config.list_physical_devices("GPU") else "CPU",
@@ -803,10 +839,24 @@ def health_check():
         "inputShape": [1, vision_engine.target_height, vision_engine.target_width, 3],
         "modelPath": vision_engine.model_path,
     }
+    latency_ms = (time.perf_counter() - t0) * 1000.0
+    log_backend_activity(
+        endpoint="GET /health",
+        model_version=res["modelVersion"],
+        input_dims=res["inputShape"],
+        top1_class="N/A",
+        confidence=1.0,
+        latency_ms=latency_ms,
+        status_code=200,
+        extra={"numClasses": res["numClasses"]},
+    )
+    return res
 
 
+@app.post("/api/v1/gradcam")
 @app.post("/analyze-leaf")
 def analyze_leaf(req: AnalyzeLeafRequest):
+    t0 = time.perf_counter()
     try:
         raw_b64 = req.imageBase64.split(",")[-1]
         img_bytes = base64.b64decode(raw_b64)
@@ -881,6 +931,23 @@ def analyze_leaf(req: AnalyzeLeafRequest):
         is_ood
         or (candidates and candidates[0]["confidence"] < 75.0)
         or (candidates and candidates[0]["id"] == "not_a_leaf_background")
+    )
+
+    latency_ms = (time.perf_counter() - t0) * 1000.0
+    top1 = candidates[0] if candidates else {"id": "unknown", "confidence": 0.0}
+    log_backend_activity(
+        endpoint="POST /api/v1/gradcam",
+        model_version=vision_engine.model_meta.get("model_version", "florax_v2_45c"),
+        input_dims=[1, vision_engine.target_height, vision_engine.target_width, 3],
+        top1_class=top1.get("id", "unknown"),
+        confidence=float(top1.get("confidence", 0.0)) / 100.0,
+        latency_ms=latency_ms,
+        status_code=200,
+        extra={
+            "requiresExpertVerification": requires_kvk,
+            "lesionAreaPercentage": lesion_pct,
+            "isOod": is_ood,
+        },
     )
 
     return {

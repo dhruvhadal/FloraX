@@ -1,15 +1,21 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dart_geohash/dart_geohash.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config/app_config.dart';
+import '../../core/logging/app_activity_logger.dart';
+import '../../data/repositories/crop_tracker_repository.dart';
+import '../../data/repositories/scan_history_repository.dart';
 import '../../domain/models/florax_models.dart';
 import '../../repositories/firestore_ipm_and_scan_repository.dart';
 import '../../services/auth/auth_role_service.dart';
+import '../../services/location/location_service.dart';
 import '../../services/notifications/outbreak_fcm_service.dart';
 import '../../services/sync/offline_media_sync_manager.dart';
 import '../../services/vision/hybrid_gradcam_client.dart';
@@ -46,6 +52,7 @@ class ScanOrchestratorState {
   final String? errorMessage;
   final bool isHandsFreeVoiceEnabled;
   final String activeLanguage; // 'mr', 'hi', 'en'
+  final ClinicalDiagnosisDecision? clinicalDecision;
 
   const ScanOrchestratorState({
     this.stage = ScanPipelineStage.idle,
@@ -61,6 +68,7 @@ class ScanOrchestratorState {
     this.errorMessage,
     this.isHandsFreeVoiceEnabled = true,
     this.activeLanguage = 'mr',
+    this.clinicalDecision,
   });
 
   bool get isProcessing =>
@@ -90,6 +98,7 @@ class ScanOrchestratorState {
     String? errorMessage,
     bool? isHandsFreeVoiceEnabled,
     String? activeLanguage,
+    ClinicalDiagnosisDecision? clinicalDecision,
   }) {
     return ScanOrchestratorState(
       stage: stage ?? this.stage,
@@ -106,6 +115,7 @@ class ScanOrchestratorState {
       isHandsFreeVoiceEnabled:
           isHandsFreeVoiceEnabled ?? this.isHandsFreeVoiceEnabled,
       activeLanguage: activeLanguage ?? this.activeLanguage,
+      clinicalDecision: clinicalDecision ?? this.clinicalDecision,
     );
   }
 }
@@ -152,6 +162,27 @@ class ScanOrchestratorNotifier extends AsyncNotifier<ScanOrchestratorState> {
     state = const AsyncData(ScanOrchestratorState());
   }
 
+  /// Analyzes an image file from camera capture or gallery selection
+  Future<void> analyzeImage(File file, {String? cropType, String? targetCropId}) async {
+    final bytes = await file.readAsBytes();
+    await executeScanPipeline(
+      rawBytes: bytes,
+      plantTagId: 'FLX-TAG-${DateTime.now().millisecondsSinceEpoch}',
+      cropType: cropType ?? 'Crop Foliage',
+      targetCropId: targetCropId,
+    );
+  }
+
+  /// Analyzes raw byte array of captured image
+  Future<void> analyzeImageBytes(Uint8List bytes, {String cropType = 'Tomato', String? targetCropId}) async {
+    await executeScanPipeline(
+      rawBytes: bytes,
+      plantTagId: 'FLX-TAG-${DateTime.now().millisecondsSinceEpoch}',
+      cropType: cropType,
+      targetCropId: targetCropId,
+    );
+  }
+
   /// Executes the complete 4-Stage Parallel Diagnostic Workflow:
   ///
   /// Stage 1: Intelligent Image Quality Verification Gate (Feature #5) - short-circuits early on blur/lighting/leaf issues
@@ -163,6 +194,7 @@ class ScanOrchestratorNotifier extends AsyncNotifier<ScanOrchestratorState> {
     required String plantTagId,
     String cropType = 'Tomato',
     String? languageOverride,
+    String? targetCropId,
   }) async {
     final stopwatch = Stopwatch()..start();
     final currentState = state.value ?? const ScanOrchestratorState();
@@ -266,28 +298,8 @@ class ScanOrchestratorNotifier extends AsyncNotifier<ScanOrchestratorState> {
         ...fullRegion.secondaryPredictions,
       ];
 
-      // Soft OOD Fallback: If not_a_leaf_background appears in predictions,
-      // promote the biological disease prediction and flag for mandatory KVK review.
-      // Never hard-block real field scans; allow farmers to see AI advisory and consult KVK scientists.
-      if (topPrediction.labelId == 'not_a_leaf_background') {
-        debugPrint(
-          '[FloraX Orchestrator] "not_a_leaf_background" in predictions. '
-          'Promoting biological disease prediction with mandatory KVK review.',
-        );
-        fullPredictions.removeWhere((p) => p.labelId == 'not_a_leaf_background');
-        if (fullPredictions.isEmpty) {
-          fullPredictions.add(const DiseasePrediction(
-            labelId: 'unknown_pathology',
-            confidence: 0.35,
-            scientificName: 'Unidentified Foliar Condition',
-            category: DiseaseCategory.fungal,
-            plainName: 'Unidentified Condition',
-            distinguishingSymptom: 'AI model is uncertain — expert review recommended.',
-          ));
-        }
-      }
-
-      // After potential OOD promotion, re-resolve the effective top prediction
+      // Authentic OOD Handling: If not_a_leaf_background is predicted, retain it legitimately
+      // without synthetic biological substitution so farmers receive clear retake/realignment guidance.
       final DiseasePrediction effectiveTopPrediction =
           fullPredictions.isNotEmpty ? fullPredictions.first : topPrediction;
 
@@ -430,6 +442,22 @@ class ScanOrchestratorNotifier extends AsyncNotifier<ScanOrchestratorState> {
         '[FloraX Orchestrator] Pipeline executed locally in ${stopwatch.elapsedMilliseconds}ms. Emitting completed state immediately.',
       );
 
+      AppActivityLogger.instance.log(
+        screen: 'camera_scan_interface',
+        action: 'tflite_inference',
+        backendTarget: 'TFLite.IsolateInterpreter',
+        status: 'SUCCESS',
+        details: {
+          'scanId': scanId,
+          'canonicalId': effectiveTopPrediction.labelId,
+          'confidence': effectiveTopPrediction.confidence,
+          'clinicalState': tfliteResult.decision.safetyState.name,
+          'normalizedEntropy': tfliteResult.decision.normalizedEntropy,
+          'cropType': resolvedCropType,
+          'elapsedMs': stopwatch.elapsedMilliseconds,
+        },
+      );
+
       // --- EMIT COMPLETED STATE BEFORE REMOTE NETWORK ACKNOWLEDGEMENT ---
       state = AsyncData(state.value!.copyWith(
         stage: ScanPipelineStage.completed,
@@ -441,7 +469,44 @@ class ScanOrchestratorNotifier extends AsyncNotifier<ScanOrchestratorState> {
         severityGrade: lesionResult.severityGrade,
         isEarlyStageAlert: isEarlyStageAlert,
         qualityReport: lesionResult.qualityReport,
+        clinicalDecision: tfliteResult.decision,
       ));
+
+      // --- PERSIST TO UNIFIED SCAN HISTORY REPOSITORY ---
+      try {
+        final scanHistoryRepo = ref.read(scanHistoryRepositoryProvider);
+        final liveLoc = ref.read(farmerLocationProvider).location;
+        final entry = ScanLogEntry(
+          flxScanId: scanId,
+          farmerMobile: currentUser?.phoneNumber ?? '+919876543210',
+          canonicalId: effectiveTopPrediction.labelId,
+          crop: resolvedCropType,
+          confidence: effectiveTopPrediction.confidence,
+          normalizedEntropy: tfliteResult.normalizedEntropy,
+          latitude: liveLoc?.latitude ?? 0.0,
+          longitude: liveLoc?.longitude ?? 0.0,
+          geoHash: (liveLoc != null && liveLoc.latitude != 0.0)
+              ? GeoHasher().encode(liveLoc.longitude, liveLoc.latitude, precision: 5)
+              : geoHash5,
+          safetyState: tfliteResult.decision.safetyState,
+          verificationStatus: verificationStatus,
+          lesionAreaPercentage: lesionResult.lesionAreaPercent,
+          severityGrade: lesionResult.severityGrade,
+          imageUrl: localFilePath.isNotEmpty ? localFilePath : lesionResult.thumbnailBase64,
+          thumbnailBase64: lesionResult.thumbnailBase64,
+          timestamp: DateTime.now(),
+        );
+        unawaited(scanHistoryRepo.saveScanLog(entry));
+
+        // Auto-feed verified leaf scan to dynamic Crop Diary
+        final cropTrackerRepo = ref.read(cropTrackerRepositoryProvider);
+        unawaited(cropTrackerRepo.recordScanForCropDiary(
+          ScanResult.fromScanLogEntry(entry),
+          targetCropId: targetCropId,
+        ));
+      } catch (repoErr) {
+        debugPrint('[FloraX Orchestrator] ScanHistoryRepository/CropDiary auto-save deferred: $repoErr');
+      }
 
       // --- BACKGROUND NON-BLOCKING FIRESTORE WRITES (Fire-and-Sync) ---
       try {
@@ -625,9 +690,16 @@ class ScanOrchestratorNotifier extends AsyncNotifier<ScanOrchestratorState> {
       debugPrint(
         '[FloraX Orchestrator ERROR] Pipeline failed: $e\n$stackTrace',
       );
+      AppActivityLogger.instance.log(
+        screen: 'camera_scan_interface',
+        action: 'pipeline_execution',
+        backendTarget: 'ScanOrchestratorProvider',
+        status: 'FAILED',
+        details: {'error': e.toString(), 'stackTrace': stackTrace.toString()},
+      );
       state = AsyncData(state.value!.copyWith(
         stage: ScanPipelineStage.error,
-        statusMessage: 'Diagnostic pipeline failed. Please retry.',
+        statusMessage: 'Diagnostic pipeline failed ($e). Please retry.',
         errorMessage: e.toString(),
       ));
     }

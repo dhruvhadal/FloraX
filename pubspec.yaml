@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # Firebase Core & Cloud Services
   firebase_core: ^2.30.0
@@ -23,11 +25,16 @@ dependencies:
 
   # Edge Vision & Hardware Camera
   camera: ^0.10.5+9
+  image_picker: ^1.1.2
   tflite_flutter: ^0.12.1
   image: ^4.1.7
 
+  # Device Hardware Permissions & Utilities
+  permission_handler: ^11.3.1
+  shared_preferences: ^2.2.3
+
   # Spatial & Geospatial Telemetry
-  geolocator: ^11.0.0
+  geolocator: 12.0.0
   dart_geohash: ^2.0.0
   flutter_map: ^8.3.2
   latlong2: ^0.9.1
@@ -41,11 +48,13 @@ dependencies:
   dio: ^5.4.2
   connectivity_plus: ^6.0.0
   path_provider: ^2.1.2
-  intl: ^0.19.0
+  intl: ^0.20.3
 
   # UI Visualizations & Agronomic Icons
   fl_chart: ^0.66.2
   lucide_icons: ^0.257.0
+  geocoding: ^5.0.1
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
@@ -61,3 +70,4 @@ flutter:
     - assets/models/labels.txt
     - assets/models/model_meta.json
     - assets/data/offline_icar_protocols.json
+    - assets/branding/kisansetu.jpg

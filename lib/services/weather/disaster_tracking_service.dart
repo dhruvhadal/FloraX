@@ -318,8 +318,8 @@ final activeDisasterAlertProvider = FutureProvider<DisasterAlert>((ref) async {
   } catch (_) {}
 
   return service.getActiveDisasterAlert(
-    latitude: pos?.latitude ?? 19.9975,
-    longitude: pos?.longitude ?? 73.7898,
+    latitude: pos?.latitude ?? 0.0,
+    longitude: pos?.longitude ?? 0.0,
     weatherReport: weatherAsync,
   );
 });

@@ -86,6 +86,242 @@ enum VerificationStatus {
   }
 }
 
+/// Deterministic 4-state clinical safety evaluation state
+enum ClinicalSafetyState {
+  oodRejected,
+  abioticStress,
+  needsReview,
+  confirmedBiotic;
+
+  String toFirestoreValue() {
+    switch (this) {
+      case ClinicalSafetyState.oodRejected:
+        return 'OOD_REJECTED';
+      case ClinicalSafetyState.abioticStress:
+        return 'ABIOTIC_STRESS';
+      case ClinicalSafetyState.needsReview:
+        return 'NEEDS_REVIEW';
+      case ClinicalSafetyState.confirmedBiotic:
+        return 'CONFIRMED_BIOTIC';
+    }
+  }
+
+  static ClinicalSafetyState fromString(String? val) {
+    switch (val?.toUpperCase().trim()) {
+      case 'OOD_REJECTED':
+      case 'OODREJECTED':
+        return ClinicalSafetyState.oodRejected;
+      case 'ABIOTIC_STRESS':
+      case 'ABIOTICSTRESS':
+        return ClinicalSafetyState.abioticStress;
+      case 'NEEDS_REVIEW':
+      case 'NEEDSREVIEW':
+        return ClinicalSafetyState.needsReview;
+      case 'CONFIRMED_BIOTIC':
+      case 'CONFIRMEDBIOTIC':
+      default:
+        return ClinicalSafetyState.confirmedBiotic;
+    }
+  }
+}
+
+/// Backward compatibility alias for ClinicalSafetyState
+typedef SafetyState = ClinicalSafetyState;
+
+/// Deterministic 4-state clinical diagnosis decision evaluator
+@immutable
+class ClinicalDiagnosisDecision {
+  final ClinicalSafetyState safetyState;
+  final String canonicalId;
+  final double top1Confidence;
+  final double normalizedEntropy;
+  final bool locksChemicalFungicides;
+  final bool routesToKvkExpert;
+  final String clinicalRationale;
+
+  const ClinicalDiagnosisDecision({
+    required this.safetyState,
+    required this.canonicalId,
+    required this.top1Confidence,
+    required this.normalizedEntropy,
+    required this.locksChemicalFungicides,
+    required this.routesToKvkExpert,
+    required this.clinicalRationale,
+  });
+
+  bool get isOodRejected => safetyState == ClinicalSafetyState.oodRejected;
+  bool get isAbioticStress => safetyState == ClinicalSafetyState.abioticStress;
+  bool get isNeedsReview => safetyState == ClinicalSafetyState.needsReview;
+  bool get isConfirmedBiotic => safetyState == ClinicalSafetyState.confirmedBiotic;
+
+  Map<String, dynamic> toMap() => {
+    'safetyState': safetyState.toFirestoreValue(),
+    'canonicalId': canonicalId,
+    'top1Confidence': top1Confidence,
+    'normalizedEntropy': normalizedEntropy,
+    'locksChemicalFungicides': locksChemicalFungicides,
+    'routesToKvkExpert': routesToKvkExpert,
+    'clinicalRationale': clinicalRationale,
+  };
+
+  factory ClinicalDiagnosisDecision.fromMap(Map<String, dynamic> map) {
+    return ClinicalDiagnosisDecision(
+      safetyState: ClinicalSafetyState.fromString(map['safetyState'] as String?),
+      canonicalId: map['canonicalId'] as String? ?? 'unknown',
+      top1Confidence: (map['top1Confidence'] as num?)?.toDouble() ?? 0.0,
+      normalizedEntropy: (map['normalizedEntropy'] as num?)?.toDouble() ?? 0.0,
+      locksChemicalFungicides: map['locksChemicalFungicides'] as bool? ?? false,
+      routesToKvkExpert: map['routesToKvkExpert'] as bool? ?? false,
+      clinicalRationale: map['clinicalRationale'] as String? ?? '',
+    );
+  }
+
+  /// Evaluates deterministic 4-state clinical diagnosis:
+  /// - oodRejected: not_a_leaf_background OR top1 < 0.45 OR normEntropy > 0.65
+  /// - abioticStress: canonicalId.startsWith('abiotic_') (locks chemical fungicides)
+  /// - needsReview: Biotic disease with top1 < 0.75 (locks Chemical tab -> routes to KVK Expert)
+  /// - confirmedBiotic: Biotic disease with top1 >= 0.75 (or healthy when endsWith('_healthy'))
+  static ClinicalDiagnosisDecision evaluate({
+    required String canonicalId,
+    required double top1Confidence,
+    required double normalizedEntropy,
+    double oodMinConfidence = 0.45,
+    double oodMaxEntropy = 0.65,
+    double clinicalLockThreshold = 0.75,
+  }) {
+    final lower = canonicalId.toLowerCase().trim();
+
+    // 1. oodRejected: not_a_leaf_background OR top1 < 0.45 OR normEntropy > 0.65
+    if (lower == 'not_a_leaf_background' ||
+        top1Confidence < oodMinConfidence ||
+        normalizedEntropy > oodMaxEntropy) {
+      return ClinicalDiagnosisDecision(
+        safetyState: ClinicalSafetyState.oodRejected,
+        canonicalId: canonicalId,
+        top1Confidence: top1Confidence,
+        normalizedEntropy: normalizedEntropy,
+        locksChemicalFungicides: true,
+        routesToKvkExpert: true,
+        clinicalRationale:
+            'Out-Of-Distribution rejection: non-leaf surface or low model confidence / high entropy.',
+      );
+    }
+
+    // 2. abioticStress: canonicalId.startsWith('abiotic_') (locks chemical fungicides)
+    if (lower.startsWith('abiotic_')) {
+      return ClinicalDiagnosisDecision(
+        safetyState: ClinicalSafetyState.abioticStress,
+        canonicalId: canonicalId,
+        top1Confidence: top1Confidence,
+        normalizedEntropy: normalizedEntropy,
+        locksChemicalFungicides: true,
+        routesToKvkExpert: top1Confidence < clinicalLockThreshold,
+        clinicalRationale:
+            'Abiotic physiological/nutrient deficiency detected. Chemical fungicides locked.',
+      );
+    }
+
+    // 3. needsReview: Biotic disease with top1 < 0.75 (locks Chemical tab -> routes to KVK Expert)
+    if (top1Confidence < clinicalLockThreshold && !lower.endsWith('_healthy')) {
+      return ClinicalDiagnosisDecision(
+        safetyState: ClinicalSafetyState.needsReview,
+        canonicalId: canonicalId,
+        top1Confidence: top1Confidence,
+        normalizedEntropy: normalizedEntropy,
+        locksChemicalFungicides: true,
+        routesToKvkExpert: true,
+        clinicalRationale:
+            'Biotic disease below ICAR safety threshold (< ${(clinicalLockThreshold * 100).toInt()}%). Chemical locked pending KVK review.',
+      );
+    }
+
+    // 4. confirmedBiotic: Biotic disease with top1 >= 0.75 (or healthy when endsWith('_healthy'))
+    return ClinicalDiagnosisDecision(
+      safetyState: ClinicalSafetyState.confirmedBiotic,
+      canonicalId: canonicalId,
+      top1Confidence: top1Confidence,
+      normalizedEntropy: normalizedEntropy,
+      locksChemicalFungicides: false,
+      routesToKvkExpert: false,
+      clinicalRationale: lower.endsWith('_healthy')
+          ? 'Healthy crop foliar tissue confirmed.'
+          : 'Biotic infection confirmed above ICAR safety threshold.',
+    );
+  }
+}
+
+/// Structured natural and organic remedy step aligned with AgriSage Organics
+@immutable
+class NaturalRemedyStep {
+  final int stepNumber;
+  final Map<String, String> title; // Trilingual ('en', 'hi', 'mr')
+  final Map<String, String> instructions; // Trilingual ('en', 'hi', 'mr')
+  final String dosage;
+  final String timing;
+  final List<String> ingredients;
+  final Map<String, String> safetyPrecaution;
+
+  const NaturalRemedyStep({
+    required this.stepNumber,
+    required this.title,
+    required this.instructions,
+    this.dosage = '',
+    this.timing = '',
+    this.ingredients = const [],
+    this.safetyPrecaution = const {},
+  });
+
+  Map<String, dynamic> toMap() => {
+    'stepNumber': stepNumber,
+    'title': title,
+    'instructions': instructions,
+    'dosage': dosage,
+    'timing': timing,
+    'ingredients': ingredients,
+    'safetyPrecaution': safetyPrecaution,
+  };
+
+  factory NaturalRemedyStep.fromMap(Map<String, dynamic> map) {
+    final rawTitle = map['title'];
+    final Map<String, String> parsedTitle = {};
+    if (rawTitle is Map) {
+      rawTitle.forEach((k, v) => parsedTitle[k.toString()] = v.toString());
+    } else if (rawTitle is String) {
+      parsedTitle['en'] = rawTitle;
+    }
+
+    final rawInst = map['instructions'] ?? map['preparation'];
+    final Map<String, String> parsedInst = {};
+    if (rawInst is Map) {
+      rawInst.forEach((k, v) => parsedInst[k.toString()] = v.toString());
+    } else if (rawInst is String) {
+      parsedInst['en'] = rawInst;
+    }
+
+    final rawPrec = map['safetyPrecaution'];
+    final Map<String, String> parsedPrec = {};
+    if (rawPrec is Map) {
+      rawPrec.forEach((k, v) => parsedPrec[k.toString()] = v.toString());
+    } else if (rawPrec is String) {
+      parsedPrec['en'] = rawPrec;
+    }
+
+    final rawIng = map['ingredients'];
+    final List<String> parsedIng =
+        rawIng is List ? rawIng.map((e) => e.toString()).toList() : [];
+
+    return NaturalRemedyStep(
+      stepNumber: (map['stepNumber'] as num?)?.toInt() ?? 1,
+      title: parsedTitle,
+      instructions: parsedInst,
+      dosage: map['dosage']?.toString() ?? '',
+      timing: map['timing']?.toString() ?? '',
+      ingredients: parsedIng,
+      safetyPrecaution: parsedPrec,
+    );
+  }
+}
+
 /// Feature #8: Standardized 3-tier severity grade based on necrotic/chlorotic leaf ratio
 enum SeverityGrade {
   mild,
@@ -689,6 +925,7 @@ class IcarIpmProtocol {
   final Map<String, List<String>> distinguishingSymptoms; // Trilingual differential diagnosis
   final Map<String, List<String>> clarifyingFollowUpQuestions; // Trilingual follow-up questions
   final List<VerifiedSource> verifiedSources;
+  final List<NaturalRemedyStep> naturalRemedySteps;
 
   const IcarIpmProtocol({
     String? id,
@@ -706,6 +943,7 @@ class IcarIpmProtocol {
     this.distinguishingSymptoms = const {},
     this.clarifyingFollowUpQuestions = const {},
     this.verifiedSources = const [],
+    this.naturalRemedySteps = const [],
   }) : id = id ?? diseaseId ?? '';
 
   String get diseaseId => id;
@@ -725,6 +963,7 @@ class IcarIpmProtocol {
     Map<String, List<String>>? distinguishingSymptoms,
     Map<String, List<String>>? clarifyingFollowUpQuestions,
     List<VerifiedSource>? verifiedSources,
+    List<NaturalRemedyStep>? naturalRemedySteps,
   }) {
     return IcarIpmProtocol(
       id: id ?? this.id,
@@ -744,6 +983,7 @@ class IcarIpmProtocol {
       clarifyingFollowUpQuestions:
           clarifyingFollowUpQuestions ?? this.clarifyingFollowUpQuestions,
       verifiedSources: verifiedSources ?? this.verifiedSources,
+      naturalRemedySteps: naturalRemedySteps ?? this.naturalRemedySteps,
     );
   }
 
@@ -764,6 +1004,7 @@ class IcarIpmProtocol {
       'distinguishingSymptoms': distinguishingSymptoms,
       'clarifyingFollowUpQuestions': clarifyingFollowUpQuestions,
       'verifiedSources': verifiedSources.map((s) => s.toMap()).toList(),
+      'naturalRemedySteps': naturalRemedySteps.map((s) => s.toMap()).toList(),
     };
   }
 
@@ -862,6 +1103,17 @@ class IcarIpmProtocol {
       }
     }
 
+    // Parse naturalRemedySteps
+    final rawRemedies = map['naturalRemedySteps'] ?? map['natural_remedy_steps'];
+    final List<NaturalRemedyStep> parsedRemedies = [];
+    if (rawRemedies is List) {
+      for (final r in rawRemedies) {
+        if (r is Map) {
+          parsedRemedies.add(NaturalRemedyStep.fromMap(Map<String, dynamic>.from(r)));
+        }
+      }
+    }
+
     return IcarIpmProtocol(
       id: docId ?? (map['id'] as String? ?? 'unknown_protocol'),
       diseaseName: parsedName,
@@ -878,6 +1130,7 @@ class IcarIpmProtocol {
       distinguishingSymptoms: parsedDistinguishing,
       clarifyingFollowUpQuestions: parsedQuestions,
       verifiedSources: parsedSources,
+      naturalRemedySteps: parsedRemedies,
     );
   }
 }
@@ -1724,6 +1977,478 @@ class ImpactTelemetry {
       verifiedOutbreakAlertsIssued:
           (map['verifiedOutbreakAlertsIssued'] as num?)?.toInt() ?? 0,
       lastUpdated: parsedDate,
+    );
+  }
+}
+
+// =============================================================================
+// UNIFIED KISANSETU DATA LAYER MODELS
+// =============================================================================
+
+/// Farmer Profile stored in Firestore `farmers/{mobileE164}`
+@immutable
+class FarmerProfile {
+  final String mobileE164; // e.g. "+919876543210"
+  final String fullName;
+  final String village;
+  final String district;
+  final String state;
+  final String pincode;
+  final String preferredLanguage; // 'mr', 'hi', 'en'
+  final bool notificationsEnabled;
+  final bool voiceGuidanceEnabled;
+  final DateTime createdAt;
+  final DateTime lastLoginAt;
+  final bool isRegistered;
+
+  const FarmerProfile({
+    required this.mobileE164,
+    required this.fullName,
+    required this.village,
+    required this.district,
+    required this.state,
+    this.pincode = '',
+    this.preferredLanguage = 'mr',
+    this.notificationsEnabled = true,
+    this.voiceGuidanceEnabled = true,
+    required this.createdAt,
+    required this.lastLoginAt,
+    this.isRegistered = true,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'mobileE164': mobileE164,
+    'fullName': fullName,
+    'village': village,
+    'district': district,
+    'state': state,
+    'pincode': pincode,
+    'preferredLanguage': preferredLanguage,
+    'notificationsEnabled': notificationsEnabled,
+    'voiceGuidanceEnabled': voiceGuidanceEnabled,
+    'createdAt': Timestamp.fromDate(createdAt),
+    'lastLoginAt': Timestamp.fromDate(lastLoginAt),
+    'isRegistered': isRegistered,
+  };
+
+  factory FarmerProfile.fromMap(Map<String, dynamic> map, [String? docId]) {
+    final rawCreated = map['createdAt'];
+    DateTime createdAt = DateTime.now();
+    if (rawCreated is Timestamp) {
+      createdAt = rawCreated.toDate();
+    } else if (rawCreated is String) {
+      createdAt = DateTime.tryParse(rawCreated) ?? DateTime.now();
+    }
+
+    final rawLogin = map['lastLoginAt'];
+    DateTime lastLoginAt = DateTime.now();
+    if (rawLogin is Timestamp) {
+      lastLoginAt = rawLogin.toDate();
+    } else if (rawLogin is String) {
+      lastLoginAt = DateTime.tryParse(rawLogin) ?? DateTime.now();
+    }
+
+    return FarmerProfile(
+      mobileE164: docId ?? map['mobileE164']?.toString() ?? '',
+      fullName: map['fullName']?.toString() ?? map['name']?.toString() ?? '',
+      village: map['village']?.toString() ?? '',
+      district: map['district']?.toString() ?? '',
+      state: map['state']?.toString() ?? '',
+      pincode: map['pincode']?.toString() ?? '',
+      preferredLanguage: map['preferredLanguage']?.toString() ?? 'mr',
+      notificationsEnabled: map['notificationsEnabled'] as bool? ?? true,
+      voiceGuidanceEnabled: map['voiceGuidanceEnabled'] as bool? ?? true,
+      createdAt: createdAt,
+      lastLoginAt: lastLoginAt,
+      isRegistered: map['isRegistered'] as bool? ?? true,
+    );
+  }
+
+  FarmerProfile copyWith({
+    String? mobileE164,
+    String? fullName,
+    String? village,
+    String? district,
+    String? state,
+    String? pincode,
+    String? preferredLanguage,
+    bool? notificationsEnabled,
+    bool? voiceGuidanceEnabled,
+    DateTime? createdAt,
+    DateTime? lastLoginAt,
+    bool? isRegistered,
+  }) {
+    return FarmerProfile(
+      mobileE164: mobileE164 ?? this.mobileE164,
+      fullName: fullName ?? this.fullName,
+      village: village ?? this.village,
+      district: district ?? this.district,
+      state: state ?? this.state,
+      pincode: pincode ?? this.pincode,
+      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      voiceGuidanceEnabled: voiceGuidanceEnabled ?? this.voiceGuidanceEnabled,
+      createdAt: createdAt ?? this.createdAt,
+      lastLoginAt: lastLoginAt ?? this.lastLoginAt,
+      isRegistered: isRegistered ?? this.isRegistered,
+    );
+  }
+}
+
+/// Unified scan log stored in Firestore `scan_logs/{flxScanId}`
+@immutable
+class ScanLogEntry {
+  final String flxScanId;
+  final String farmerMobile;
+  final String canonicalId;
+  final String crop;
+  final double confidence;
+  final double normalizedEntropy;
+  final double latitude;
+  final double longitude;
+  final String geoHash;
+  final ClinicalSafetyState safetyState;
+  final VerificationStatus verificationStatus;
+  final double lesionAreaPercentage;
+  final SeverityGrade severityGrade;
+  final String? imageUrl;
+  final String? thumbnailBase64;
+  final DateTime timestamp;
+
+  const ScanLogEntry({
+    required this.flxScanId,
+    required this.farmerMobile,
+    required this.canonicalId,
+    required this.crop,
+    required this.confidence,
+    required this.normalizedEntropy,
+    required this.latitude,
+    required this.longitude,
+    required this.geoHash,
+    required this.safetyState,
+    required this.verificationStatus,
+    this.lesionAreaPercentage = 0.0,
+    this.severityGrade = SeverityGrade.mild,
+    this.imageUrl,
+    this.thumbnailBase64,
+    required this.timestamp,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'flxScanId': flxScanId,
+    'farmerMobile': farmerMobile,
+    'canonicalId': canonicalId,
+    'crop': crop,
+    'confidence': confidence,
+    'normalizedEntropy': normalizedEntropy,
+    'latitude': latitude,
+    'longitude': longitude,
+    'geoHash': geoHash,
+    'safetyState': safetyState.toFirestoreValue(),
+    'verificationStatus': verificationStatus.toFirestoreValue(),
+    'lesionAreaPercentage': lesionAreaPercentage,
+    'severityGrade': severityGrade.toFirestoreValue(),
+    'imageUrl': imageUrl,
+    'thumbnailBase64': thumbnailBase64,
+    'timestamp': Timestamp.fromDate(timestamp),
+  };
+
+  factory ScanLogEntry.fromMap(Map<String, dynamic> map, [String? docId]) {
+    final rawTime = map['timestamp'];
+    DateTime time = DateTime.now();
+    if (rawTime is Timestamp) {
+      time = rawTime.toDate();
+    } else if (rawTime is String) {
+      time = DateTime.tryParse(rawTime) ?? DateTime.now();
+    }
+
+    return ScanLogEntry(
+      flxScanId: docId ?? map['flxScanId']?.toString() ?? '',
+      farmerMobile: map['farmerMobile']?.toString() ?? '',
+      canonicalId: map['canonicalId']?.toString() ?? 'unknown',
+      crop: map['crop']?.toString() ?? 'Crop',
+      confidence: (map['confidence'] as num?)?.toDouble() ?? 0.0,
+      normalizedEntropy: (map['normalizedEntropy'] as num?)?.toDouble() ?? 0.0,
+      latitude: (map['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (map['longitude'] as num?)?.toDouble() ?? 0.0,
+      geoHash: map['geoHash']?.toString() ?? '',
+      safetyState: ClinicalSafetyState.fromString(map['safetyState'] as String?),
+      verificationStatus: VerificationStatus.fromString(map['verificationStatus'] as String?),
+      lesionAreaPercentage: (map['lesionAreaPercentage'] as num?)?.toDouble() ?? 0.0,
+      severityGrade: SeverityGrade.fromString(map['severityGrade'] as String?),
+      imageUrl: map['imageUrl'] as String?,
+      thumbnailBase64: map['thumbnailBase64'] as String?,
+      timestamp: time,
+    );
+  }
+}
+
+/// Six polymorphic assistance categories supported by KisanSetu / LeafGuard Connect
+enum AssistanceCategory {
+  financial,
+  inputs,
+  equipment,
+  emergency,
+  technical,
+  ngo;
+
+  String get value => name;
+
+  static AssistanceCategory fromString(String? val) {
+    switch (val?.toLowerCase().trim()) {
+      case 'financial':
+        return AssistanceCategory.financial;
+      case 'inputs':
+        return AssistanceCategory.inputs;
+      case 'equipment':
+        return AssistanceCategory.equipment;
+      case 'emergency':
+        return AssistanceCategory.emergency;
+      case 'technical':
+        return AssistanceCategory.technical;
+      case 'ngo':
+      default:
+        return AssistanceCategory.ngo;
+    }
+  }
+}
+
+/// Unified polymorphic assistance application stored in Firestore `assistance_applications/{appId}`
+@immutable
+class AssistanceApplication {
+  final String appId;
+  final String farmerMobile;
+  final String farmerName;
+  final String district;
+  final String state;
+  final String pinCode;
+  final AssistanceCategory category;
+  final String programId;
+  final String programTitle;
+  final String details;
+  final double requestedAmount;
+  final String status; // 'PENDING', 'APPROVED', 'DISBURSED', 'REJECTED'
+  final DateTime appliedAt;
+  final Map<String, dynamic> metadata;
+
+  const AssistanceApplication({
+    required this.appId,
+    required this.farmerMobile,
+    required this.farmerName,
+    required this.district,
+    required this.state,
+    this.pinCode = '',
+    required this.category,
+    required this.programId,
+    required this.programTitle,
+    required this.details,
+    this.requestedAmount = 0.0,
+    this.status = 'PENDING',
+    required this.appliedAt,
+    this.metadata = const {},
+  });
+
+  Map<String, dynamic> toMap() => {
+    'appId': appId,
+    'farmerMobile': farmerMobile,
+    'farmerName': farmerName,
+    'district': district,
+    'state': state,
+    'pinCode': pinCode,
+    'category': category.value,
+    'programId': programId,
+    'programTitle': programTitle,
+    'details': details,
+    'requestedAmount': requestedAmount,
+    'status': status,
+    'appliedAt': Timestamp.fromDate(appliedAt),
+    'metadata': metadata,
+  };
+
+  factory AssistanceApplication.fromMap(Map<String, dynamic> map, [String? docId]) {
+    final rawTime = map['appliedAt'];
+    DateTime time = DateTime.now();
+    if (rawTime is Timestamp) {
+      time = rawTime.toDate();
+    } else if (rawTime is String) {
+      time = DateTime.tryParse(rawTime) ?? DateTime.now();
+    }
+
+    return AssistanceApplication(
+      appId: docId ?? map['appId']?.toString() ?? '',
+      farmerMobile: map['farmerMobile']?.toString() ?? '',
+      farmerName: map['farmerName']?.toString() ?? '',
+      district: map['district']?.toString() ?? '',
+      state: map['state']?.toString() ?? '',
+      pinCode: map['pinCode']?.toString() ?? '',
+      category: AssistanceCategory.fromString(map['category'] as String?),
+      programId: map['programId']?.toString() ?? '',
+      programTitle: map['programTitle']?.toString() ?? '',
+      details: map['details']?.toString() ?? '',
+      requestedAmount: (map['requestedAmount'] as num?)?.toDouble() ?? 0.0,
+      status: map['status']?.toString() ?? 'PENDING',
+      appliedAt: time,
+      metadata: Map<String, dynamic>.from(map['metadata'] as Map? ?? {}),
+    );
+  }
+}
+
+/// Available government or NGO assistance program stored in Firestore `available_programs/{programId}`
+@immutable
+class AidProgram {
+  final String programId;
+  final AssistanceCategory category;
+  final Map<String, String> title; // Trilingual ('en', 'hi', 'mr')
+  final Map<String, String> description;
+  final String eligibleState; // "ALL" or specific state
+  final String sponsoringAgency;
+  final double maxBenefitAmount;
+  final List<String> requiredDocuments;
+  final bool isActive;
+  final bool isInformationalOnly;
+
+  const AidProgram({
+    required this.programId,
+    required this.category,
+    required this.title,
+    required this.description,
+    this.eligibleState = 'ALL',
+    required this.sponsoringAgency,
+    this.maxBenefitAmount = 0.0,
+    this.requiredDocuments = const [],
+    this.isActive = true,
+    this.isInformationalOnly = false,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'programId': programId,
+    'category': category.value,
+    'title': title,
+    'description': description,
+    'eligibleState': eligibleState,
+    'sponsoringAgency': sponsoringAgency,
+    'maxBenefitAmount': maxBenefitAmount,
+    'requiredDocuments': requiredDocuments,
+    'isActive': isActive,
+    'isInformationalOnly': isInformationalOnly,
+  };
+
+  factory AidProgram.fromMap(Map<String, dynamic> map, [String? docId]) {
+    final rawTitle = map['title'];
+    final Map<String, String> parsedTitle = {};
+    if (rawTitle is Map) {
+      rawTitle.forEach((k, v) => parsedTitle[k.toString()] = v.toString());
+    } else if (rawTitle is String) {
+      parsedTitle['en'] = rawTitle;
+    }
+
+    final rawDesc = map['description'];
+    final Map<String, String> parsedDesc = {};
+    if (rawDesc is Map) {
+      rawDesc.forEach((k, v) => parsedDesc[k.toString()] = v.toString());
+    } else if (rawDesc is String) {
+      parsedDesc['en'] = rawDesc;
+    }
+
+    final rawDocs = map['requiredDocuments'];
+    final List<String> parsedDocs =
+        rawDocs is List ? rawDocs.map((e) => e.toString()).toList() : [];
+
+    return AidProgram(
+      programId: docId ?? map['programId']?.toString() ?? '',
+      category: AssistanceCategory.fromString(map['category'] as String?),
+      title: parsedTitle,
+      description: parsedDesc,
+      eligibleState: map['eligibleState']?.toString() ?? 'ALL',
+      sponsoringAgency: map['sponsoringAgency']?.toString() ?? '',
+      maxBenefitAmount: (map['maxBenefitAmount'] as num?)?.toDouble() ?? 0.0,
+      requiredDocuments: parsedDocs,
+      isActive: map['isActive'] as bool? ?? true,
+      isInformationalOnly: map['isInformationalOnly'] as bool? ?? false,
+    );
+  }
+}
+
+/// Expert consultation tracking stored in Firestore `consultations/{consultId}`
+@immutable
+class ConsultationRequest {
+  final String consultId;
+  final String farmerMobile;
+  final String farmerName;
+  final String expertId;
+  final String expertName;
+  final String crop;
+  final String canonicalId;
+  final String? scanId;
+  final String farmerQuery;
+  final String? expertResponse;
+  final String status; // 'PENDING', 'IN_REVIEW', 'COMPLETED'
+  final DateTime submittedAt;
+  final DateTime? resolvedAt;
+
+  const ConsultationRequest({
+    required this.consultId,
+    required this.farmerMobile,
+    required this.farmerName,
+    required this.expertId,
+    required this.expertName,
+    required this.crop,
+    required this.canonicalId,
+    this.scanId,
+    required this.farmerQuery,
+    this.expertResponse,
+    this.status = 'PENDING',
+    required this.submittedAt,
+    this.resolvedAt,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'consultId': consultId,
+    'farmerMobile': farmerMobile,
+    'farmerName': farmerName,
+    'expertId': expertId,
+    'expertName': expertName,
+    'crop': crop,
+    'canonicalId': canonicalId,
+    'scanId': scanId,
+    'farmerQuery': farmerQuery,
+    'expertResponse': expertResponse,
+    'status': status,
+    'submittedAt': Timestamp.fromDate(submittedAt),
+    'resolvedAt': resolvedAt != null ? Timestamp.fromDate(resolvedAt!) : null,
+  };
+
+  factory ConsultationRequest.fromMap(Map<String, dynamic> map, [String? docId]) {
+    final rawSub = map['submittedAt'];
+    DateTime submittedAt = DateTime.now();
+    if (rawSub is Timestamp) {
+      submittedAt = rawSub.toDate();
+    } else if (rawSub is String) {
+      submittedAt = DateTime.tryParse(rawSub) ?? DateTime.now();
+    }
+
+    final rawRes = map['resolvedAt'];
+    DateTime? resolvedAt;
+    if (rawRes is Timestamp) {
+      resolvedAt = rawRes.toDate();
+    } else if (rawRes is String) {
+      resolvedAt = DateTime.tryParse(rawRes);
+    }
+
+    return ConsultationRequest(
+      consultId: docId ?? map['consultId']?.toString() ?? '',
+      farmerMobile: map['farmerMobile']?.toString() ?? '',
+      farmerName: map['farmerName']?.toString() ?? '',
+      expertId: map['expertId']?.toString() ?? '',
+      expertName: map['expertName']?.toString() ?? '',
+      crop: map['crop']?.toString() ?? '',
+      canonicalId: map['canonicalId']?.toString() ?? '',
+      scanId: map['scanId']?.toString(),
+      farmerQuery: map['farmerQuery']?.toString() ?? '',
+      expertResponse: map['expertResponse']?.toString(),
+      status: map['status']?.toString() ?? 'PENDING',
+      submittedAt: submittedAt,
+      resolvedAt: resolvedAt,
     );
   }
 }
